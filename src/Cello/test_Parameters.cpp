@@ -79,29 +79,29 @@ void generate_input()
 
   fp << "Float_expr {\n";
   fp << "  var_float_1 {\n";
-  fp << "    num1 = x;\n";
-  fp << "    num2 = x - 3.0;\n";
-  fp << "    num3 = x+y+z+t;\n";
+  fp << "    num1 = \"x\";\n";
+  fp << "    num2 = \"x - 3.0\";\n";
+  fp << "    num3 = \"x+y+z+t\";\n";
   fp << "  }\n";
   fp << "}\n";
 
   fp << " Float_expr {\n";
   fp << "    var_float_2 {\n";
-  fp << "       num1 = sin(x);\n";
-  fp << "       num2 = atan(y/3.0+3.0*t);\n";
+  fp << "       num1 = \"sin(x)\";\n";
+  fp << "       num2 = \"atan(y/3.0+3.0*t)\";\n";
   fp << "     }\n";
   fp << "  }\n";
 
   fp << " Logical_expr {\n";
   fp << "  var_logical {\n";
-  fp << "    num1 = x < y;\n";
-  fp << "    num2 = x + y >= t + 3.0;\n";
-  fp << "    num3 = x == y;\n";
+  fp << "    num1 = \"x < y\";\n";
+  fp << "    num2 = \"x + y >= t + 3.0\";\n";
+  fp << "    num3 = \"x == y\";\n";
   fp << "  }\n";
   fp << "}\n";
 
   fp << " List {\n";
-  fp << "  num1 = [1.0, true, -37, \"string\", x-y+2.0*z, x+y+t > 0.0 ];\n";
+  fp << "  num1 = [1.0, true, -37, \"string\", \"x-y+2.0*z\", \"x+y+t > 0.0\" ];\n";
   fp << "}\n";
 
   fp << " Duplicate {\n";
@@ -287,10 +287,10 @@ void check_parameters(Parameters * parameters)
   parameters->group_set(0,"Float");
   parameters->group_set(1,"group_float_1");
 
-  unit_assert(parameters->value_float("num1") == 24.5+6.125);
-  unit_assert(parameters->value_float("num2") == 24.5-6.125);
-  unit_assert(parameters->value_float("num3") == 24.5*6.125);
-  unit_assert(parameters->value_float("num4") == 24.5/6.125);
+  unit_assert(parameters->value_float("num1") == "24.5+6.125");
+  unit_assert(parameters->value_float("num2") == "24.5-6.125");
+  unit_assert(parameters->value_float("num3") == "24.5*6.125");
+  unit_assert(parameters->value_float("num4") == "24.5/6.125");
 
   unit_assert(parameters->value_float("Float:group_float_1:num1") == 24.5+6.125);
   unit_assert(parameters->value_float("Float:group_float_1:num2") == 24.5-6.125);
@@ -483,17 +483,17 @@ void check_parameters(Parameters * parameters)
   // delete parameters;
   // parameters = new Parameters;
   // parameters->read ("test.in");
-  const int NUM_GROUPS = 8;
+  const int NUM_GROUPS = 6;
   struct {
     const char * group;
     int count;
   } child_count[NUM_GROUPS] = {
     {"Float",       4 + 1},
-    {"Float_expr",  2},
+    // {"Float_expr",  2},
     {"Integer",     2 + 2},
     {"List",        2},
     {"Logical",     2 + 2},
-    {"Logical_expr",1},
+    // {"Logical_expr",1},
     {"String",      2 + 1},
     {"Duplicate",   1}
   };

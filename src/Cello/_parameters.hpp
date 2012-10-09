@@ -16,9 +16,7 @@ enum parameter_enum {
   parameter_float,
   parameter_string,
   parameter_logical,
-  parameter_list,
-  parameter_float_expr,
-  parameter_logical_expr
+  parameter_list
 };
 
 typedef int parameter_type;

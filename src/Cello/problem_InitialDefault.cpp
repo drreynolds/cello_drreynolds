@@ -299,25 +299,15 @@ void InitialDefault::evaluate_float_
 
   // parameter: Initial : <field> : value
 
-  parameter_type value_type = 
-    parameters_->list_type(index_list,"value");
-
-  if (value_type != parameter_float_expr &&
-      value_type != parameter_float) {
-	  	      
-    ERROR1("InitialDefault::evaluate_float_", 
-	   "Odd-index elements of %s must be floating-point expressions",
-	   field_name.c_str());
-  }
-
   // Evaluate the floating-point expression
 
-  if (value_type == parameter_float) {
-    double v = parameters_->list_value_float(index_list,"value",0.0);
-    for (int i=0; i<n; i++) value[i] = v;
-  } else {
-    parameters_->list_evaluate_float
-      (index_list,"value",n,value,deflt,x,y,z,t);
+  Simulation * simulation = proxy_simulation.ckLocalBranch();
+  Config * config = simulation->config();
+
+  std::string value = simulation->config()->initial_value[index_list];
+
+  for (int i=0; i<config->num_fields; i++) {
+    config->evaluate_float(value,n,value,deflt,x,y,z,t);
   }
 }
 
@@ -346,10 +336,10 @@ void InitialDefault::evaluate_logical_
     v = parameters_->list_value_logical(index_list,"value",false);
     for (int i=0; i<n; i++) mask[i] = v;
     break;
-  case parameter_logical_expr:
-    parameters_->list_evaluate_logical
-      (index_list,"value",n,mask,deflt,x,y,z,t);
-    break;
+  // case parameter_logical_expr:
+  //   parameters_->list_evaluate_logical
+  //     (index_list,"value",n,mask,deflt,x,y,z,t);
+  //   break;
   case parameter_string:
     field_block->size(&nxb,&nyb,&nzb);
     ASSERT1("InitialDefault::evaluate_logical",

@@ -138,8 +138,8 @@ sources_test =        [Glob('test_Unit*cpp')]
 # 4. cp build/serial/Cello/parse.tab.? src/Cello
 # 5. Recomment below
 #@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-# env.CFile(target = 'lex.yy.c', source = 'parse.l')
-# env.CFile(target = ['parse.tab.c', 'parse.tab.h'], source = 'parse.y', YACCFLAGS='-d -t')
+env.CFile(target = 'lex.yy.c', source = 'parse.l')
+env.CFile(target = ['parse.tab.c', 'parse.tab.h'], source = 'parse.y', YACCFLAGS='-d -t')
 #@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
 

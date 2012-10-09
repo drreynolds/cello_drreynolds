@@ -10,17 +10,17 @@
 
 //----------------------------------------------------------------------
 
-/// @brief Print a parameter expression
-extern "C" { 
-  void print_expression(struct node_expr * node,
-		      FILE * fp = stdout);
-}
+// /// @brief Print a parameter expression
+// extern "C" { 
+//   void print_expression(struct node_expr * node,
+// 		      FILE * fp = stdout);
+// }
 
-/// @brief Print a parameter expression
-extern "C" { 
-  void sprintf_expression(struct node_expr * node,
-			  char * buffer);
-}
+// /// @brief Print a parameter expression
+// extern "C" { 
+//   void sprintf_expression(struct node_expr * node,
+// 			  char * buffer);
+// }
 
 /// @brief Print a parameter list
 extern "C" { 
@@ -79,26 +79,6 @@ public: // interface
   }
 #endif
 
-  /// Evaluate a floating-point expression given vectos x,y,z,t
-  void evaluate_float  
-  ( struct node_expr * node, 
-    int                n, 
-    double *           result, 
-    double *           x, 
-    double *           y, 
-    double *           z, 
-    double *           t);
-
-  /// Evaluate a logical expression given vectos x,y,z,t
-  void evaluate_logical  
-  ( struct node_expr * node, 
-    int                n, 
-    bool *             result, 
-    double *           x, 
-    double *           y, 
-    double *           z, 
-    double *           t);
-
   /// Set the parameter type and value
   void set(struct param_struct * param);
 
@@ -121,11 +101,11 @@ public: // interface
   /// Return whether the parameter is a list
   bool is_list()         { return type_ == parameter_list; };
 
-  /// Return whether the parameter is a floating-point expression
-  bool is_float_expr()  { return type_ == parameter_float_expr; };
+  // /// Return whether the parameter is a floating-point expression
+  // bool is_float_expr()  { return type_ == parameter_float_expr; };
 
-  /// Return whether the parameter is a logical expression
-  bool is_logical_expr() { return type_ == parameter_logical_expr; };
+  // /// Return whether the parameter is a logical expression
+  // bool is_logical_expr() { return type_ == parameter_logical_expr; };
 
   /// Get an integer parameter
   int get_integer () 
@@ -199,20 +179,6 @@ private: // functions
     }
   };
 
-  /// Set a floating-point expression parameter
-  void set_float_expr_ (struct node_expr * value)
-  { 
-    type_ = parameter_float_expr;
-    value_expr_     = value; 
-  };
-
-  /// Set a logical expression parameter
-  void set_logical_expr_ (struct node_expr * value)
-  { 
-    type_ = parameter_logical_expr;
-    value_expr_     = value; 
-  };
-
   /// Deallocate the parameter
   void dealloc_();
 
@@ -222,12 +188,9 @@ private: // functions
   /// Deallocate a list of parameters
   void dealloc_list_     (list_type *value_list_);
 
-  /// Deallocate an expression parameter
-  void dealloc_node_expr_ (struct node_expr * p);
-
-  ///
-  void write_float_expr_(FILE * file_pointer,
-			  struct node_expr * value_expr_);
+  // ///
+  // void write_float_expr_(FILE * file_pointer,
+  // 			  struct node_expr * value_expr_);
 
   //----------------------------------------------------------------------
 
@@ -248,7 +211,7 @@ private: // attributes
     bool               value_logical_; 
     char *             value_string_;
     list_type *        value_list_;
-    struct node_expr * value_expr_;
+    // struct node_expr * value_expr_;
   };
 
 };

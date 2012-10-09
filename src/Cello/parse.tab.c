@@ -141,77 +141,77 @@ const char * op_name[] = {
     "identifier",
     "logical",
     "list",
-    "float_expr",
-    "logical_expr",
+    /* "float_expr", */
+    /* "logical_expr", */
     "function" };
 
   /* Structure for storing a single parameter / value pair in a linked list */
 
 
-  struct node_expr * new_node_operation
-    (struct node_expr * left, 
-     enum enum_op oper,
-     struct node_expr * right)
-  {
+  /* struct node_expr * new_node_operation */
+  /*   (struct node_expr * left,  */
+  /*    enum enum_op oper, */
+  /*    struct node_expr * right) */
+  /* { */
     
-    struct node_expr * node = malloc (sizeof (struct node_expr));
+  /*   struct node_expr * node = malloc (sizeof (struct node_expr)); */
 
-    node->type          = enum_node_operation;
-    node->op_value      = oper;
-    node->left          = left;
-    node->right         = right;
-    node->function_name = NULL;
-    return node;
-  }
+  /*   node->type          = enum_node_operation; */
+  /*   node->op_value      = oper; */
+  /*   node->left          = left; */
+  /*   node->right         = right; */
+  /*   node->function_name = NULL; */
+  /*   return node; */
+  /* } */
 
-  struct node_expr * new_node_float (double value)
-  {
-    struct node_expr * node = malloc (sizeof (struct node_expr));
+  /* struct node_expr * new_node_float (double value) */
+  /* { */
+  /*   struct node_expr * node = malloc (sizeof (struct node_expr)); */
 
-    node->type          = enum_node_float;
-    node->float_value  = value;
-    node->left          = NULL;
-    node->right         = NULL;
-    node->function_name = NULL;
-    return node;
-  }
-  struct node_expr * new_node_logical (int value)
-  {
-    struct node_expr * node = malloc (sizeof (struct node_expr));
+  /*   node->type          = enum_node_float; */
+  /*   node->float_value  = value; */
+  /*   node->left          = NULL; */
+  /*   node->right         = NULL; */
+  /*   node->function_name = NULL; */
+  /*   return node; */
+  /* } */
+  /* struct node_expr * new_node_logical (int value) */
+  /* { */
+  /*   struct node_expr * node = malloc (sizeof (struct node_expr)); */
 
-    node->type          = enum_node_integer;
-    node->integer_value = value;
-    node->left          = NULL;
-    node->right         = NULL;
-    node->function_name = NULL;
-    return node;
-  }
-  struct node_expr * new_node_variable (char * value)
-  {
-    struct node_expr * node = malloc (sizeof (struct node_expr));
+  /*   node->type          = enum_node_integer; */
+  /*   node->integer_value = value; */
+  /*   node->left          = NULL; */
+  /*   node->right         = NULL; */
+  /*   node->function_name = NULL; */
+  /*   return node; */
+  /* } */
+  /* struct node_expr * new_node_variable (char * value) */
+  /* { */
+  /*   struct node_expr * node = malloc (sizeof (struct node_expr)); */
 
-    node->type          = enum_node_variable;
-    node->var_value     = value[0];
-    node->left          = NULL;
-    node->right         = NULL;
-    node->function_name = NULL;
-    free (value);
-    return node;
-  }
-  struct node_expr * new_node_function
-    (double (*function)(double),
-     char * function_name,
-     struct node_expr * argument)
-  {
-    struct node_expr * node = malloc (sizeof (struct node_expr));
+  /*   node->type          = enum_node_variable; */
+  /*   node->var_value     = value[0]; */
+  /*   node->left          = NULL; */
+  /*   node->right         = NULL; */
+  /*   node->function_name = NULL; */
+  /*   free (value); */
+  /*   return node; */
+  /* } */
+  /* struct node_expr * new_node_function */
+  /*   (double (*function)(double), */
+  /*    char * function_name, */
+  /*    struct node_expr * argument) */
+  /* { */
+  /*   struct node_expr * node = malloc (sizeof (struct node_expr)); */
 
-    node->type          = enum_node_function;
-    node->fun_value     = function;
-    node->left          = argument;
-    node->right         = NULL;
-    node->function_name = strdup(function_name);
-    return node;
-  }
+  /*   node->type          = enum_node_function; */
+  /*   node->fun_value     = function; */
+  /*   node->left          = argument; */
+  /*   node->right         = NULL; */
+  /*   node->function_name = strdup(function_name); */
+  /*   return node; */
+  /* } */
 
 
   /* The head of the linked list of parameter / value pairs */
@@ -400,13 +400,13 @@ const char * op_name[] = {
 
   /* New string parameter assignment */
 
-  void new_param_expr (enum enum_parameter type,
-		       struct node_expr * value)
-  {
-    struct param_struct * p = new_param();
-    p->type     = type;
-    p->op_value = value;
-  }
+  /* void new_param_expr (enum enum_parameter type, */
+  /* 		       struct node_expr * value) */
+  /* { */
+  /*   struct param_struct * p = new_param(); */
+  /*   p->type     = type; */
+  /*   p->op_value = value; */
+  /* } */
 
   void new_parameter()
   {
@@ -428,12 +428,12 @@ const char * op_name[] = {
        break;
      case enum_parameter_list:
        break;
-     case enum_parameter_float_expr:
-       new_param_expr(enum_parameter_float_expr,yylval.node_type);
-       break;
-     case enum_parameter_logical_expr:
-       new_param_expr(enum_parameter_logical_expr,yylval.node_type);
-       break;
+     /* case enum_parameter_float_expr: */
+     /*   new_param_expr(enum_parameter_float_expr,yylval.node_type); */
+     /*   break; */
+     /* case enum_parameter_logical_expr: */
+     /*   new_param_expr(enum_parameter_logical_expr,yylval.node_type); */
+     /*   break; */
     default:
        printf ("%s:%d Parse Error: unknown type %d\n",
 	       __FILE__,__LINE__,current_type);
@@ -531,7 +531,7 @@ typedef union YYSTYPE
   double float_type;  
   char * string_type; 
   char * group_type;
-  struct node_expr * node_type;
+  /* struct node_expr * node_type; */
   
 
 

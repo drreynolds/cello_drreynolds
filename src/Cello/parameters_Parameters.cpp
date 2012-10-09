@@ -391,76 +391,6 @@ void Parameters::set_string
 
 //----------------------------------------------------------------------
 
-void Parameters::evaluate_float 
-(
- std::string parameter,
- int         n, 
- double    * result, 
- double    * deflt,
- double    * x, 
- double    * y, 
- double    * z, 
- double    * t) throw()
-/// @param   parameter Parameter name
-/// @param   n         Length of variable arrays
-/// @param   result    Output array of evaluated floating point parameters values if it exists, or deflt if not
-/// @param   deflt     Array of default values
-/// @param   x         Array of X values
-/// @param   y         Array of Y values
-/// @param   z         Array of Z values
-/// @param   t         Array of T values
-{
-  Param * param = parameter_(parameter);
-  ASSERT1 ("Parameters::evaluate_float",
-	   "Parameter %s is not a floating-point expression", parameter.c_str(),
-	   ( ! param || param->is_float_expr()));
-  if (param != NULL) {
-    param->evaluate_float(param->value_expr_,n,result,x,y,z,t);
-  } else {
-    for (int i=0; i<n; i++) result[i] = deflt[i];
-  }
-  // char deflt_string[MAX_PARAMETER_FILE_WIDTH];
-  // sprintf_expression (param->value_expr_,deflt_string);
-  // monitor_access_(parameter,deflt_string);
-}
-
-//----------------------------------------------------------------------
-
-void Parameters::evaluate_logical 
-(
- std::string parameter,
- int         n, 
- bool      * result, 
- bool      * deflt,
- double    * x, 
- double    * y, 
- double    * z, 
- double    * t) throw()
-/// @param   parameter Parameter name
-/// @param   n         Length of variable arrays
-/// @param   result    Output array of evaluated logical parameters values if it exists, or deflt if not
-/// @param   deflt     Array of default values
-/// @param   x         Array of X values
-/// @param   y         Array of Y values
-/// @param   z         Array of Z values
-/// @param   t         Array of T values
-{
-  Param * param = parameter_(parameter);
-  ASSERT1 ("Parameters::evaluate_logical",
-	   "Parameter %s is not a logical expression", parameter.c_str(),
-	   (! param || param->is_logical_expr()));
-  if (param != NULL) {
-    param->evaluate_logical(param->value_expr_,n,result,x,y,z,t);
-  } else {
-    for (int i=0; i<n; i++) result[i] = deflt[i];
-  }
-  // char deflt_string[MAX_PARAMETER_FILE_WIDTH];
-  // sprintf_expression (param->value_expr_,deflt_string);
-  // monitor_access_(parameter,deflt_string);
-}
-
-//----------------------------------------------------------------------
-
 int Parameters::list_length(std::string parameter)
 /// @param   parameter Parameter name
 {
@@ -668,81 +598,81 @@ void Parameters::set_list_string
 
 //----------------------------------------------------------------------
 
-void Parameters::list_evaluate_float 
-(
- int index,
- std::string parameter,
- int         n, 
- double    * result, 
- double    * deflt,
- double    * x, 
- double    * y, 
- double    * z, 
- double    * t
- ) throw()
-/// @param   index     Index into the list
-/// @param   parameter Parameter name
-/// @param   n         Length of variable arrays
-/// @param   result    Output array of evaluated floating point expression list parameter element values if it exists, or deflt if not
-/// @param   deflt     Array of default values
-/// @param   x         Array of X values
-/// @param   y         Array of Y values
-/// @param   z         Array of Z values
-/// @param   t         Array of T values
-{
+// void Parameters::list_evaluate_float 
+// (
+//  int index,
+//  std::string parameter,
+//  int         n, 
+//  double    * result, 
+//  double    * deflt,
+//  double    * x, 
+//  double    * y, 
+//  double    * z, 
+//  double    * t
+//  ) throw()
+// /// @param   index     Index into the list
+// /// @param   parameter Parameter name
+// /// @param   n         Length of variable arrays
+// /// @param   result    Output array of evaluated floating point expression list parameter element values if it exists, or deflt if not
+// /// @param   deflt     Array of default values
+// /// @param   x         Array of X values
+// /// @param   y         Array of Y values
+// /// @param   z         Array of Z values
+// /// @param   t         Array of T values
+// {
 
-  Param * param = list_element_(parameter,index);
-  ASSERT2 ("Parameters::list_evaluate_float",
-	   "Parameter %s[%d] is not a floating-point expression",
-	   parameter.c_str(),index,
-	   ( ! param || param->is_float_expr()));
-  if (param != NULL) {
-    param->evaluate_float(param->value_expr_,n,result,x,y,z,t);
-  } else {
-    for (int i=0; i<n; i++) result[i] = deflt[i];
-  }
-  // char deflt_string[MAX_PARAMETER_FILE_WIDTH];
-  // sprintf_expression (param->value_expr_,deflt_string);
-  // monitor_access_(parameter,deflt_string,index);
-}
+//   Param * param = list_element_(parameter,index);
+//   ASSERT2 ("Parameters::list_evaluate_float",
+// 	   "Parameter %s[%d] is not a floating-point expression",
+// 	   parameter.c_str(),index,
+// 	   ( ! param || param->is_float_expr()));
+//   if (param != NULL) {
+//     param->evaluate_float(param->value_expr_,n,result,x,y,z,t);
+//   } else {
+//     for (int i=0; i<n; i++) result[i] = deflt[i];
+//   }
+//   // char deflt_string[MAX_PARAMETER_FILE_WIDTH];
+//   // sprintf_expression (param->value_expr_,deflt_string);
+//   // monitor_access_(parameter,deflt_string,index);
+// }
 
-//----------------------------------------------------------------------
+// //----------------------------------------------------------------------
 
-void Parameters::list_evaluate_logical 
-(
- int index,
- std::string parameter,
- int         n, 
- bool      * result, 
- bool      * deflt,
- double    * x, 
- double    * y, 
- double    * z, 
- double    * t) throw()
-/// @param   index     Index into the list
-/// @param   parameter Parameter name
-/// @param   n         Length of variable arrays
-/// @param   result    Output array of evaluated logical expression list parameter element values if it exists, or deflt if not
-/// @param   deflt     Array of default values
-/// @param   x         Array of X values
-/// @param   y         Array of Y values
-/// @param   z         Array of Z values
-/// @param   t         Array of T values
-{
-  Param * param = list_element_(parameter,index);
-  ASSERT2 ("Parameters::list_evaluate_logical",
-	   "Parameter %s[%d] is not a logical",
-	   parameter.c_str(),index,
-	   ( ! param || param->is_logical_expr()));
-  if (param != NULL) {
-    param->evaluate_logical(param->value_expr_,n,result,x,y,z,t);
-  } else {
-    for (int i=0; i<n; i++) result[i] = deflt[i];
-  }
-  // char deflt_string[MAX_PARAMETER_FILE_WIDTH];
-  // sprintf_expression (param->value_expr_,deflt_string);
-  // monitor_access_(parameter,deflt_string,index);
-}
+// void Parameters::list_evaluate_logical 
+// (
+//  int index,
+//  std::string parameter,
+//  int         n, 
+//  bool      * result, 
+//  bool      * deflt,
+//  double    * x, 
+//  double    * y, 
+//  double    * z, 
+//  double    * t) throw()
+// /// @param   index     Index into the list
+// /// @param   parameter Parameter name
+// /// @param   n         Length of variable arrays
+// /// @param   result    Output array of evaluated logical expression list parameter element values if it exists, or deflt if not
+// /// @param   deflt     Array of default values
+// /// @param   x         Array of X values
+// /// @param   y         Array of Y values
+// /// @param   z         Array of Z values
+// /// @param   t         Array of T values
+// {
+//   Param * param = list_element_(parameter,index);
+//   ASSERT2 ("Parameters::list_evaluate_logical",
+// 	   "Parameter %s[%d] is not a logical",
+// 	   parameter.c_str(),index,
+// 	   ( ! param || param->is_logical_expr()));
+//   if (param != NULL) {
+//     param->evaluate_logical(param->value_expr_,n,result,x,y,z,t);
+//   } else {
+//     for (int i=0; i<n; i++) result[i] = deflt[i];
+//   }
+//   // char deflt_string[MAX_PARAMETER_FILE_WIDTH];
+//   // sprintf_expression (param->value_expr_,deflt_string);
+//   // monitor_access_(parameter,deflt_string,index);
+// }
 
 //----------------------------------------------------------------------
 

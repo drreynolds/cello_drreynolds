@@ -12,6 +12,20 @@
 #define MAX_FIELDS 10
 #define MAX_FILE_GROUPS 10
 
+struct node_expr {
+  enum enum_node type;
+  union {
+    enum enum_op op_value;       /* arthmetic / logical operation */
+    double       float_value;   /* floating point number */
+    int          integer_value;  /* integer / logical constant */
+    char         var_value;      /* variable, e.g. x,y,z,t */
+    double (*fun_value)(double); /* math.h function */
+  };
+  struct node_expr * left;
+  struct node_expr * right;
+  char * function_name;
+};
+
 class Parameters;
 
 class Config {
@@ -41,6 +55,54 @@ public: // interface
 
   /// Read values from the Parameters object
   void read (Parameters * parameters) throw();
+
+  /// Evaluate the floating-point valued parameter expression
+  void evaluate_float 
+  (
+   std::string expression,
+   int         n, 
+   double    * result, 
+   double    * deflt,
+   double    * x, 
+   double    * y, 
+   double    * z, 
+   double    * t)
+    throw();
+
+  /// Evaluate the logical-valued parameter expression
+  void evaluate_logical 
+  (
+   std::string expression,
+   int         n, 
+   bool      * result, 
+   bool      * deflt,
+   double    * x, 
+   double    * y, 
+   double    * z, 
+   double    * t)
+    throw();
+
+private: // private functions
+
+  /// Evaluate a floating-point expression given vectos x,y,z,t
+  void evaluate_float_
+  ( struct node_expr * node, 
+    int                n, 
+    double *           result, 
+    double *           x, 
+    double *           y, 
+    double *           z, 
+    double *           t);
+
+  /// Evaluate a logical expression given vectos x,y,z,t
+  void evaluate_logical_  
+  ( struct node_expr * node, 
+    int                n, 
+    bool *             result, 
+    double *           x, 
+    double *           y, 
+    double *           z, 
+    double *           t);
 
 public: // attributes
 
@@ -117,6 +179,25 @@ public: // attributes
 
   std::string                timestep_type;
 
+private: // functions
+
+  // /// Deallocate an expression parameter
+  // void dealloc_node_expr_ (struct node_expr * p);
+
+  // /// Set a floating-point expression parameter
+  // void set_float_expr_ (struct node_expr * value)
+  // { 
+  //   type_ = parameter_float_expr;
+  //   value_expr_     = value; 
+  // };
+
+  // /// Set a logical expression parameter
+  // void set_logical_expr_ (struct node_expr * value)
+  // { 
+  //   type_ = parameter_logical_expr;
+  //   value_expr_     = value; 
+  // };
+  
 };
 
 #endif /* PARAMETERS_CONFIG_HPP */
