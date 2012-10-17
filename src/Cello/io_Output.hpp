@@ -34,7 +34,7 @@ public: // functions
   Output() throw() { }
 
   /// Create an uninitialized Output object
-  Output(const Factory * factory) throw();
+  Output(int index, const Factory * factory) throw();
 
   /// Delete an Output object
   virtual ~Output() throw();
@@ -115,10 +115,11 @@ public: // functions
   /// Accessor function for the CHARM Loop class
   Loop * loop() { return & loop_; };
 
-  /// Set the index of this output in its simulation
-  void set_index_charm(int index_charm) { index_charm_ = index_charm; }
-
 #endif
+
+  /// Return the index id in the containing Problem
+  int index() const throw() { return index_; }
+
 
 public: // virtual functions
 
@@ -227,10 +228,11 @@ protected: // attributes
   /// Loop for ending output
   Loop loop_;
 
-  /// Index of this Output object in Simulation
-  size_t index_charm_;
-
 #endif
+
+  /// Index of this Output object in Simulation
+  size_t index_;
+
 
   /// Simulation cycle for next IO
   int cycle_;

@@ -11,10 +11,11 @@
 
 //----------------------------------------------------------------------
 
-OutputImage::OutputImage(const Factory * factory,
+OutputImage::OutputImage(int index,
+			 const Factory * factory,
 			 int process_count,
 			 int nrows, int ncols) throw ()
-  : Output(factory),
+  : Output(index,factory),
     data_(),
     op_reduce_(reduce_sum),
     axis_(axis_z),
@@ -68,8 +69,10 @@ void OutputImage::pup (PUP::er &p)
   p | ncols_;
   WARNING("OutputImage::pup","skipping data_");
   //  PUParray(p,data_,nrows_*ncols_);
+  if (p.isUnpacking()) data_ = 0;
   WARNING("OutputImage::pup","skipping png");
   // p | *png_;
+  if (p.isUnpacking()) png_ = 0;
 }
 #endif
 

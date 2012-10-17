@@ -12,26 +12,17 @@
 
 OutputData::OutputData
 (
+ int index,
  const Factory * factory,
- Parameters * parameters
+ Config * config
 ) throw ()
-  : Output(factory)
+  : Output(index,factory)
 {
   // Set process stride, with default = 1
 
-  // ASSUMES "Output : <file_group>" is current parameters group
-  // set in Problem::initialize_output()
+  int stride = config->output_stride[index_];
 
-  //--------------------------------------------------
-  // parameter: Output : <file_group> : stride
-  //--------------------------------------------------
-
-  ASSERT ("OutputData::OutputData",
-	  "Output:<group_name>:process_stride",
-	  parameters->type("stride") == parameter_unknown ||
-	  parameters->type("stride") == parameter_integer);
-
-  process_stride_ = parameters->value_integer("stride",1);
+  process_stride_ = stride == 0 ? 1 : stride;
 
 }
 

@@ -12,8 +12,6 @@
 #include "simulation.hpp"
 #include "charm_simulation.hpp"
 
-bool config_performance = true;
-
 Simulation::Simulation
 (
  const char *   parameter_file,
@@ -37,6 +35,9 @@ Simulation::Simulation
   time_(0.0),
   dt_(0),
   stop_(false),
+  config_(0),
+  problem_(0),
+  timer_(),
   performance_simulation_(0),
   performance_cycle_(0),
   performance_curr_(0),
@@ -81,9 +82,10 @@ Simulation::Simulation
 
   lcaperf_->begin();
 
+  timer_.start();
+
   parameters_ = new Parameters(parameter_file,monitor_);
 
-  config_.read(parameters_);
 }
 
 //----------------------------------------------------------------------
@@ -111,9 +113,10 @@ void Simulation::pup (PUP::er &p)
 
   p | factory_; // PUP::able
 
-  if (up) parameters_ = new Parameters;
-  p | * parameters_;
+  // if (up) parameters_ = new Parameters;
+  // p | * parameters_;
 
+  WARNING("Simulation::pup","config_ needs to be PUP::able");
   p | config_;
 
   p | parameter_file_;
@@ -187,6 +190,8 @@ Simulation::~Simulation() throw()
 
 void Simulation::initialize() throw()
 {
+  initialize_config_();
+
   initialize_monitor_();
 
   initialize_simulation_();
@@ -194,13 +199,12 @@ void Simulation::initialize() throw()
 
   initialize_data_descr_();
 
-  problem_->initialize_boundary(&config_);
-  problem_->initialize_initial (parameters_,group_process_);
-  problem_->initialize_stopping(parameters_);
-  problem_->initialize_timestep(parameters_);
-  problem_->initialize_output  (parameters_,field_descr_,
-				group_process_,factory());
-  problem_->initialize_method  (parameters_);
+  problem_->initialize_boundary(config_);
+  problem_->initialize_initial (config_,parameters_,group_process_);
+  problem_->initialize_stopping(config_);
+  problem_->initialize_timestep(config_);
+  problem_->initialize_output  (config_,field_descr_,group_process_,factory());
+  problem_->initialize_method  (config_);
 
   initialize_hierarchy_();
 
@@ -225,7 +229,7 @@ void Simulation::finalize() throw()
 void Simulation::initialize_simulation_() throw()
 {
 
-  dimension_ = config_.mesh_root_rank;
+  dimension_ = config_->mesh_root_rank;
   
   ASSERT ("Simulation::initialize_simulation_()", 
 	  "Parameter 'Mesh:root_rank' must be specified",
@@ -235,8 +239,8 @@ void Simulation::initialize_simulation_() throw()
 	  "Parameter 'Mesh:root_rank' must be 1, 2, or 3",
 	  (1 <= dimension_) && (dimension_ <= 3));
 
-  cycle_ = config_.initial_cycle;
-  time_  = config_.initial_time;
+  cycle_ = config_->initial_cycle;
+  time_  = config_->initial_time;
   dt_ = 0;
 
   // Initialize Performance
@@ -252,9 +256,21 @@ void Simulation::initialize_simulation_() throw()
 
 //----------------------------------------------------------------------
 
+void Simulation::initialize_config_() throw()
+{
+  TRACE("BEGIN Simulation::initialize_config_");
+  if (config_ == NULL) {
+    config_ = new Config;
+    config_->read(parameters_);
+  }
+  TRACE("END   Simulation::initialize_config_");
+}
+
+//----------------------------------------------------------------------
+
 void Simulation::initialize_monitor_() throw()
 {
-  bool debug = config_.monitor_debug;
+  bool debug = config_->monitor_debug;
   monitor_->set_active("DEBUG",debug);
  
 }
@@ -272,15 +288,15 @@ void Simulation::initialize_data_descr_() throw()
 
   // Add data fields
 
-  for (size_t i=0; i<config_.field_fields.size(); i++) {
-    field_descr_->insert_field (config_.field_fields[i]);
+  for (size_t i=0; i<config_->field_fields.size(); i++) {
+    field_descr_->insert_field (config_->field_fields[i]);
   }
 
   // Define default ghost zone depth for all fields, default value of 1
 
-  int gx = config_.field_ghosts[0];
-  int gy = config_.field_ghosts[1];
-  int gz = config_.field_ghosts[2];
+  int gx = config_->field_ghosts[0];
+  int gy = config_->field_ghosts[1];
+  int gz = config_->field_ghosts[2];
 
   for (int i=0; i<field_descr_->field_count(); i++) {
     field_descr_->set_ghosts (i,gx,gy,gz);
@@ -288,61 +304,21 @@ void Simulation::initialize_data_descr_() throw()
 
   // Set face dimensions to refresh
 
-  //--------------------------------------------------
-  // parameter: Field : refresh_faces
-  // parameter: Field : refresh_edges
-  // parameter: Field : refresh_corners
-  //--------------------------------------------------
-
-  // Refresh face ghost zones
-  if (parameters_->type("Field:refresh_faces") == parameter_logical) {
-    bool refresh_faces = 
-      parameters_->value_logical ("Field:refresh:faces",true);
-    field_descr_->set_refresh_face(2,refresh_faces);
-  }
-
-  // Refresh edge ghost zones
-  if (parameters_->type("Field:refresh_edges") == parameter_logical) {
-    bool refresh_edges = 
-      parameters_->value_logical ("Field:refresh:edges",false);
-    field_descr_->set_refresh_face(1,refresh_edges);
-  }
-
-  // Refresh corner ghost zones
-  if (parameters_->type("Field:refresh_corners") == parameter_logical) {
-    bool refresh_corners = 
-      parameters_->value_logical ("Field:refresh:corners",false);
-    field_descr_->set_refresh_face(0,refresh_corners);
-  }
+  field_descr_->set_refresh_face(2,config_->field_refresh_faces);
+  field_descr_->set_refresh_face(1,config_->field_refresh_edges);
+  field_descr_->set_refresh_face(0,config_->field_refresh_corners);
   
-  //--------------------------------------------------
-  // parameter: Field : precision
-  //--------------------------------------------------
-
-  std::string precision_str = 
-    parameters_->value_string("Field:precision","default");
-
-  precision_type precision = precision_unknown;
-
-  if      (precision_str == "default")   precision = precision_default;
-  else if (precision_str == "single")    precision = precision_single;
-  else if (precision_str == "double")    precision = precision_double;
-  else if (precision_str == "quadruple") precision = precision_quadruple;
-  else {
-    ERROR1 ("Simulation::initialize_data_descr_()", 
-	    "Unknown precision %s",
-	    precision_str.c_str());
-  }
+  // Default precision
 
   for (int i=0; i<field_descr_->field_count(); i++) {
-    field_descr_->set_precision(i,precision);
+    field_descr_->set_precision(i,config_->field_precision);
   }
 
   //--------------------------------------------------
   // parameter: Field : alignment
   //--------------------------------------------------
 
-  int alignment = config_.field_alignment;
+  int alignment = config_->field_alignment;
 
   ASSERT1 ("Simulation::initialize_data_descr_",
 	  "Illegal Field:alignment parameter value %d",
@@ -351,25 +327,16 @@ void Simulation::initialize_data_descr_() throw()
 	  
   field_descr_->set_alignment (alignment);
   
-  //--------------------------------------------------
-  // parameter: Field : padding
-  //--------------------------------------------------
+  field_descr_->set_padding (config_->field_padding);
 
-  int padding = parameters_->value_integer("Field:padding",0);
-
-  field_descr_->set_padding (padding);
-
-  //--------------------------------------------------
-  // parameter: Field : <field_name> : centering
-  //--------------------------------------------------
 
   for (int i=0; i<field_descr_->field_count(); i++) {
 
     std::string field_name = field_descr_->field_name(i);
 
-    bool cx = config_.field_centering[0][i];
-    bool cy = config_.field_centering[1][i];
-    bool cz = config_.field_centering[2][i];
+    bool cx = config_->field_centering[0][i];
+    bool cy = config_->field_centering[1][i];
+    bool cz = config_->field_centering[2][i];
 
     field_descr_->set_centering(i,cx,cy,cz);
 
@@ -395,13 +362,13 @@ void Simulation::initialize_hierarchy_() throw()
   // Domain extents
 
   hierarchy_->set_lower
-    (config_.domain_lower[0], 
-     config_.domain_lower[1], 
-     config_.domain_lower[2]);
+    (config_->domain_lower[0], 
+     config_->domain_lower[1], 
+     config_->domain_lower[2]);
   hierarchy_->set_upper
-    (config_.domain_upper[0], 
-     config_.domain_upper[1], 
-     config_.domain_upper[2]);
+    (config_->domain_upper[0], 
+     config_->domain_upper[1], 
+     config_->domain_upper[2]);
 
   //----------------------------------------------------------------------
   // Create and initialize root Patch in Hierarchy
@@ -412,31 +379,14 @@ void Simulation::initialize_hierarchy_() throw()
   // parameter: Mesh : root_blocks
   //--------------------------------------------------
 
-  int root_size[3];
-
-  root_size[0] = parameters_->list_value_integer(0,"Mesh:root_size",1);
-  root_size[1] = parameters_->list_value_integer(1,"Mesh:root_size",1);
-  root_size[2] = parameters_->list_value_integer(2,"Mesh:root_size",1);
-
-  hierarchy_->set_root_size(root_size[0],root_size[1],root_size[2]);
-
-  int root_blocks[3];
-
-  root_blocks[0] = parameters_->list_value_integer(0,"Mesh:root_blocks",1);
-  root_blocks[1] = parameters_->list_value_integer(1,"Mesh:root_blocks",1);
-  root_blocks[2] = parameters_->list_value_integer(2,"Mesh:root_blocks",1);
-
-#ifndef CONFIG_USE_CHARM
-  ASSERT4 ("Simulation::initialize_hierarchy_",
-	   "Product of Mesh:root_blocks = [%d %d %d] must equal MPI_Comm_size = %d",
-	   root_blocks[0],root_blocks[1],root_blocks[2], group_process_->size(),
-	   root_blocks[0]*root_blocks[1]*root_blocks[2]==group_process_->size());
-#endif
-
-  std::string type = parameters_->value_string("Initial:type","default");
+  hierarchy_->set_root_size(config_->mesh_root_size[0],
+			    config_->mesh_root_size[1],
+			    config_->mesh_root_size[2]);
 
   // Don't allocate blocks if reading data from files
-  bool allocate_blocks = ! ( type == "file" || type == "restart" );
+
+  bool allocate_blocks = ! ( config_->initial_type == "file" || 
+			     config_->initial_type == "restart" );
 
 #ifdef CONFIG_USE_CHARM
   // Distributed patches in Charm: only allocate on root processor
@@ -446,8 +396,12 @@ void Simulation::initialize_hierarchy_() throw()
     {
       hierarchy_->create_root_patch
 	(field_descr_,
-	 root_size[0],root_size[1],root_size[2],
-	 root_blocks[0],root_blocks[1],root_blocks[2],
+	 config_->mesh_root_size[0],
+	 config_->mesh_root_size[1],
+	 config_->mesh_root_size[2],
+	 config_->mesh_root_blocks[0],
+	 config_->mesh_root_blocks[1],
+	 config_->mesh_root_blocks[2],
 	 allocate_blocks);
     }
 
@@ -514,30 +468,41 @@ void Simulation::update_state(int cycle, double time, double dt, double stop)
 
 void Simulation::monitor_output()
 {
-
+  TRACE1("monitor = %p",monitor_);
   monitor_->  print("", "-------------------------------------");
+  TRACE0;
 
   monitor_-> print("Simulation", "cycle %04d", cycle_);
   monitor_-> print("Simulation", "time-sim %15.12f",time_);
   monitor_-> print("Simulation", "dt %15.12g", dt_);
 
+  TRACE0;
+
   Memory * memory = Memory::instance();
 
+  TRACE0;
   if (memory->is_active()) {
     monitor_->print("Memory","bytes-curr %lld", memory->bytes());
     monitor_->print("Memory","bytes-high %lld", memory->bytes_high());
 
     memory->reset_high();
   }
+  TRACE0;
 
-  if (config_performance) {
-    performance_output(performance_cycle_);
-  } else {
-#ifdef CONFIG_USE_CHARM
-    ((SimulationCharm *) this)->c_compute();
+#ifdef CONFIG_USE_PERFORMANCE
+  TRACE0;
+  performance_output(performance_cycle_);
+  TRACE0;
+#else
+  TRACE0;
+  output_performance_();
+  TRACE0;
+# ifdef CONFIG_USE_CHARM
+  TRACE0;
+  ((SimulationCharm *) this)->c_compute();
+  TRACE0;
+# endif
 #endif
-  }
-
 }
 
 
@@ -611,6 +576,11 @@ void Simulation::performance_output(Performance * performance)
 void Simulation::output_performance_()
 {
   DEBUG("Simulation::output_performance");
+
+  monitor_->print ("Performance","time-accum %f", timer_.value());
+
+#ifdef CONFIG_USE_PERFORMANCE
+
   int i = 0;
   int np = group_process()->size();
 
@@ -653,6 +623,8 @@ void Simulation::output_performance_()
   //   proxy_main.p_exit(CkNumPes());
   }
 #endif
+
+#endif /* CONFIG_USE_PERFORMANCE */
 
   // monitor_->set_active(save_active);
 

@@ -45,10 +45,24 @@ EnzoSimulationCharm::~EnzoSimulationCharm() throw()
 
 //----------------------------------------------------------------------
 
+void EnzoSimulationCharm::pup (PUP::er &p)
+{
+  TRACEPUP;
+  // NOTE: change this function whenever attributes change
+  SimulationCharm::pup(p);
+  if (p.isUnpacking()) {
+    EnzoBlock::initialize(static_cast<EnzoConfig*>(config_),field_descr());
+  }
+}
+
+//----------------------------------------------------------------------
+
 void EnzoSimulationCharm::initialize() throw()
 {
+  initialize_config_();
+
   SimulationCharm::initialize();
-  EnzoBlock::initialize(&config_,field_descr());
+  EnzoBlock::initialize(static_cast<EnzoConfig*>(config_),field_descr());
 }
 
 //----------------------------------------------------------------------
@@ -57,6 +71,17 @@ const Factory * EnzoSimulationCharm::factory() const throw()
 { 
   if (! factory_) factory_ = new EnzoFactory;
   return factory_;
+}
+
+//----------------------------------------------------------------------
+
+void EnzoSimulationCharm::initialize_config_() throw()
+{
+  TRACE("BEGIN EnzoSimulationCharm::initialize_config_");
+  if (config_ == NULL) config_ = new EnzoConfig;
+
+  static_cast<EnzoConfig*>(config_)->read(parameters_);
+  TRACE("END   EnzoSimulationCharm::initialize_config_");
 }
 
 //======================================================================

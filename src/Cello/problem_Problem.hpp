@@ -122,23 +122,24 @@ public: // interface
   void initialize_boundary(Config * config) throw();
 
   /// Initialize the initial conditions object
-  void initialize_initial(Parameters * parameters,
+  void initialize_initial(Config * config,
+			  Parameters * parameters,
 			  const GroupProcess * group_process) throw();
 
-  /// Initialize the method objects
-  void initialize_method(Parameters * parameters) throw();
+  /// Initialize the stopping object
+  void initialize_stopping(Config * config ) throw();
+
+  /// Initialize the timestep object
+  void initialize_timestep(Config * config) throw();
 
   /// Initialize the output objects
-  void initialize_output(Parameters * parameters,
+  void initialize_output(Config * config,
 			 FieldDescr * field_descr,
 			 const GroupProcess * group_process,
 			 const Factory * factory) throw();
 
-  /// Initialize the stopping object
-  void initialize_stopping(Parameters * parameters) throw();
-
-  /// Initialize the timestep object
-  void initialize_timestep(Parameters * parameters) throw();
+  /// Initialize the method objects
+  void initialize_method(Config * config) throw();
 
 
 protected: // functions
@@ -152,7 +153,9 @@ protected: // functions
 
   /// Create named initialization object
   virtual Initial *  create_initial_ 
-  (std::string name, Parameters * parameters,
+  (std::string name, 
+   Parameters * parameters,
+   Config * config,
    const GroupProcess * = 0) throw ();
 
   /// Create named method object
@@ -161,16 +164,16 @@ protected: // functions
 
   /// Create named output object
   virtual Output *   create_output_  
-  (std::string name, Parameters * parameters,
+  (std::string name, int index, Config * config,
    const GroupProcess *, const Factory * ) throw ();
 
   /// Create named stopping object
   virtual Stopping * create_stopping_ 
-  (std::string name, Parameters * parameters) throw ();
+  (std::string name, Config * config) throw ();
 
   /// Create named timestep object
   virtual Timestep * create_timestep_ 
-  (std::string name, Parameters * parameters) throw ();
+  (std::string name, Config * config) throw ();
 
 private: // attributes
 

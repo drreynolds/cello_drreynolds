@@ -9,7 +9,6 @@
 #define IO_OUTPUT_RESTART_HPP
 
 class ItField;
-class Parameters;
 
 class OutputRestart : public Output {
 
@@ -20,14 +19,16 @@ class OutputRestart : public Output {
 public: // functions
 
   /// Empty constructor for Charm++ pup()
-  OutputRestart() throw() {}
+  OutputRestart() throw() { }
 
   /// Create an uninitialized OutputRestart object
-  OutputRestart(const Factory * factory, Parameters * parameters, int process_count) throw();
+  OutputRestart(int index, 
+		const Factory * factory, 
+		Config * config, 
+		int process_count) throw();
 
   /// Destructor
-  ~OutputRestart() throw()
-  {}
+  ~OutputRestart() throw()  { }
 
 #ifdef CONFIG_USE_CHARM
 
@@ -35,7 +36,7 @@ public: // functions
   PUPable_decl(OutputRestart);
 
   /// Charm++ PUP::able migration constructor
-  OutputRestart (CkMigrateMessage *m) : Output (m) {}
+  OutputRestart (CkMigrateMessage *m) : Output (m) { }
 
   /// CHARM++ Pack / Unpack function
   void pup (PUP::er &p);

@@ -63,13 +63,12 @@ class EnzoBlock : public Block
   friend class EnzoTimestepPpm;
   friend class EnzoTimestepPpml;
   friend class EnzoInitialImplosion2;
+  friend class EnzoInitialSedovArray3;
 
   //----------------------------------------------------------------------
   // functions
 
-  static void initialize 
-  (Config * config,
-   FieldDescr *);
+  static void initialize (EnzoConfig * enzo_config, FieldDescr *);
 
   //----------------------------------------------------------------------
   // variables

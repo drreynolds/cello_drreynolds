@@ -7,9 +7,11 @@
 
 module enzo {
 
+  PUPable EnzoConfig;
   PUPable EnzoBoundary;
   PUPable EnzoFactory;
   PUPable EnzoInitialImplosion2;
+  PUPable EnzoInitialSedovArray3;
   PUPable EnzoMethodPpm;
   PUPable EnzoMethodPpml;
   PUPable EnzoProblem;

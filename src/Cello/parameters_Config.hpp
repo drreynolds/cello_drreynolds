@@ -9,7 +9,7 @@
 #ifndef PARAMETERS_CONFIG_HPP
 #define PARAMETERS_CONFIG_HPP
 
-#define MAX_FIELDS 10
+#define MAX_FIELDS      30
 #define MAX_FILE_GROUPS 10
 
 struct node_expr {
@@ -28,7 +28,11 @@ struct node_expr {
 
 class Parameters;
 
-class Config {
+class Config 
+#ifdef CONFIG_USE_CHARM
+  : public PUP::able 
+#endif
+{
 
   /// @class    Config
   /// @ingroup  Parameters
@@ -36,21 +40,21 @@ class Config {
 
 public: // interface
 
-  /// Constructor
-  Config() throw();
-
-  /// Destructor
-  ~Config() throw();
-
-  /// Copy constructor
-  Config(const Config & config) throw();
-
-  /// Assignment operator
-  Config & operator= (const Config & config) throw();
+  /// empty constructor for charm++ pup()
+  Config() throw() {}
 
 #ifdef CONFIG_USE_CHARM
+
+  /// CHARM++ PUP::able declaration
+  PUPable_decl(Config);
+
+  /// CHARM++ migration constructor for PUP::able
+
+  Config (CkMigrateMessage *m) : PUP::able(m) {}
+
   /// CHARM++ Pack / Unpack function
   void pup (PUP::er &p);
+
 #endif
 
   /// Read values from the Parameters object
@@ -113,20 +117,6 @@ public: // attributes
   double                     domain_lower[3];
   double                     domain_upper[3];
 
-  double                     enzo_ppm_density_floor;
-  bool                       enzo_ppm_diffusion;
-  bool                       enzo_ppm_dual_energy;
-  double                     enzo_ppm_dual_energy_eta_1;
-  double                     enzo_ppm_dual_energy_eta_2;
-  int                        enzo_ppm_flattening;
-  int                        enzo_ppm_minimum_pressure_support_parameter;
-  double                     enzo_ppm_number_density_floor;
-  double                     enzo_ppm_pressure_floor;
-  bool                       enzo_ppm_pressure_free;
-  bool                       enzo_ppm_steepening;
-  float                      enzo_ppm_temperature_floor;
-  bool                       enzo_ppm_use_minimum_pressure_support;
-
   int                        num_fields;
   int                        field_alignment;
   std::vector<int>           field_centering [3];
@@ -134,9 +124,10 @@ public: // attributes
   std::vector<std::string>   field_fields;
   int                        field_ghosts[3];;
   int                        field_padding;
-  std::string                field_precision;
+  int                        field_precision;
   bool                       field_refresh_corners;
   bool                       field_refresh_edges;
+  bool                       field_refresh_faces;
 
   int                        initial_cycle;
   std::string                initial_type;
@@ -152,24 +143,23 @@ public: // attributes
 
   bool                       monitor_debug;
 
+  int                        num_file_groups;
   std::vector<std::string>   output_file_groups;
-  std::string                output_axis           [MAX_FILE_GROUPS];
-  std::vector<double>        output_colormap       [MAX_FILE_GROUPS];
-  std::vector<double>        output_colormap_alpha [MAX_FILE_GROUPS];
-  std::vector<std::string>   output_field_list     [MAX_FILE_GROUPS];
-  std::vector<std::string>   output_name           [MAX_FILE_GROUPS];
-  std::vector<std::string>   output_dir            [MAX_FILE_GROUPS];
-  std::vector<std::string>   output_schedule       [MAX_FILE_GROUPS];
   std::string                output_type           [MAX_FILE_GROUPS];
 
-  bool                       physics_cosmology;
-  double                     physics_cosmology_comoving_box_size;
-  double                     physics_cosmology_hubble_constant_now;
-  double                     physics_cosmology_initial_redshift;
-  double                     physics_cosmology_max_expansion_rate;
-  double                     physics_cosmology_omega_lamda_now;
-  double                     physics_cosmology_omega_matter_now;
-  double                     physics_gamma;
+  std::string                output_image_axis           [MAX_FILE_GROUPS];
+  std::vector<double>        output_image_colormap_alpha [MAX_FILE_GROUPS];
+  std::vector<double>        output_image_colormap       [MAX_FILE_GROUPS];
+  std::vector<std::string>   output_dir            [MAX_FILE_GROUPS];
+  int                        output_stride         [MAX_FILE_GROUPS];
+  std::vector<std::string>   output_field_list     [MAX_FILE_GROUPS];
+  std::vector<std::string>   output_name           [MAX_FILE_GROUPS];
+  std::string                output_schedule_type  [MAX_FILE_GROUPS];
+  std::string                output_schedule_var   [MAX_FILE_GROUPS];
+  double                     output_schedule_start [MAX_FILE_GROUPS];
+  double                     output_schedule_stop  [MAX_FILE_GROUPS];
+  double                     output_schedule_step  [MAX_FILE_GROUPS];
+  std::vector<double>        output_schedule_list  [MAX_FILE_GROUPS];
 
   int                        stopping_cycle;
   double                     stopping_time;

@@ -29,24 +29,25 @@ public: // functions
   EnzoSimulationCharm() {}
 
   /// CHARM++ Migration constructor
-  EnzoSimulationCharm(CkMigrateMessage * m) : SimulationCharm(m)  { };
+  EnzoSimulationCharm(CkMigrateMessage * m) : SimulationCharm(m)  
+  {
+  };
 
   /// Destructor
   ~EnzoSimulationCharm() throw();
 
   /// CHARM++ Pack / Unpack function
-  inline void pup (PUP::er &p)
-  {
-    TRACEPUP;
-    // NOTE: change this function whenever attributes change
-    SimulationCharm::pup(p);
-  }
+  void pup (PUP::er &p);
 
   /// Initialize the Enzo Simulation
   virtual void initialize() throw();
 
   /// Return an EnzoFactory object, creating it if needed
   virtual const Factory * factory() const throw();
+
+private: // functions
+
+  virtual void initialize_config_() throw();
 
 };
 

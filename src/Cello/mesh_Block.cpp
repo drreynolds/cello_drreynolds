@@ -327,7 +327,6 @@ void Block::p_output(CkReductionMsg * msg)
 
   Simulation * simulation = proxy_simulation.ckLocalBranch();
 
-  TRACE1("block cycle = %d\n",cycle_);
   simulation->update_state(cycle_,time_,dt_patch,stop_patch);
  
   //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
@@ -431,8 +430,8 @@ void Block::refresh ()
   gz = false;
 
   int fxl = 1;
-  int fyl = nby==1 ? 0 : 1;
-  int fzl = nbz==1 ? 0 : 1;
+  int fyl = (nby==1 && ! periodic) ? 0 : 1;
+  int fzl = (nbz==1 && ! periodic) ? 0 : 1;
 
   for (int fx=-fxl; fx<=fxl; fx++) {
     for (int fy=-fyl; fy<=fyl; fy++) {
@@ -698,9 +697,9 @@ void Block::compute()
 
   Simulation * simulation = proxy_simulation.ckLocalBranch();
 
-// #ifdef CONFIG_USE_PROJECTIONS
-//   double time_start = CmiWallTimer();
-// #endif
+ #ifdef CONFIG_USE_PROJECTIONS
+   double time_start = CmiWallTimer();
+ #endif
 
   FieldDescr * field_descr = simulation->field_descr();
 
@@ -709,9 +708,9 @@ void Block::compute()
     method -> compute_block (field_descr,this);
   }
 
-// #ifdef CONFIG_USE_PROJECTIONS
-//   traceUserBracketEvent(10,time_start, CmiWallTimer());
-// #endif
+ #ifdef CONFIG_USE_PROJECTIONS
+   traceUserBracketEvent(10,time_start, CmiWallTimer());
+ #endif
 
   // Update Block cycle and time to Simulation time and cycle
 
