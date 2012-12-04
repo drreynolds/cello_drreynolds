@@ -13,7 +13,6 @@
 #include "charm.hpp"
 
 #include "_performance.hpp"
-#include "_lcaperf.hpp"
 #include "_monitor.hpp"
 #include "_parallel.hpp"
 #include "_memory.hpp"

@@ -67,7 +67,7 @@ void SimulationMpi::run() throw()
 
     while ((block = ++it_block)) {
 
-      initial->enforce(block, field_descr_, hierarchy_);
+      initial->enforce_block(block, field_descr_, hierarchy_);
 
       block->set_cycle(cycle_);
       block->set_time(time_);
@@ -295,9 +295,9 @@ void SimulationMpi::run() throw()
   // END MAIN LOOP
   //======================================================================
 
+  performance_write();
   scheduled_output();
   monitor_output();
-  performance_output(performance_simulation_);
 
 }
 
@@ -314,7 +314,7 @@ void SimulationMpi::scheduled_output()
 
       output->open();
 
-      output->write(this);
+      output->write_simulation(this);
 
       //--------------------------------------------------
       int ip       = group_process_->rank();

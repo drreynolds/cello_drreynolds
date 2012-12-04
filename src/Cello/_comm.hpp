@@ -1,31 +1,35 @@
 // See LICENSE_CELLO file for license and copyright information
 
-/// @file     _monitor.hpp
-/// @author   James Bordner (jobordner@ucsd.edu)
-/// @date     2009-10-05
-/// @brief    Private include file for the \ref Monitor component
+#ifdef TEMP_USE_COMM
 
-#ifndef _MONITOR_HPP
-#define _MONITOR_HPP
+/// @file     _comm.hpp
+/// @author   James Bordner (jobordner@ucsd.edu)
+/// @date     2012-11-27
+/// @brief    Private include file for the \ref Comm component 
+
+#ifndef _COMM_HPP
+#define _COMM_HPP
 
 //----------------------------------------------------------------------
 // System includes
 //----------------------------------------------------------------------
 
-#include <stdio.h>
-#include <time.h>
+// #include <stdlib.h>
+// #include <string>
+// #include <sstream>
+// #include <vector>
+// #include <memory>
 
-#include <cstdarg>
-#include <string>
-#include <map>
+#ifdef CONFIG_USE_CHARM
+#  include "pup_stl.h"
+#endif
 
 //----------------------------------------------------------------------
 // Component class includes
 //----------------------------------------------------------------------
 
-#include "auto_config.def"
+#include "comm_CommBlock.hpp"
 
-#include "monitor_Monitor.hpp"
+#endif /* _COMM_HPP */
 
-#endif /* _MONITOR_HPP */
-
+#endif /* TEMP_USE_COMM */

@@ -4,254 +4,398 @@
 /// @author    James Bordner (jobordner@ucsd.edu)
 /// @date      2009-10-15
 /// @brief     Implementation of the Performance class
+///
+/// Counters
 
 #include "cello.hpp"
 
 #include "performance.hpp"
 
 Performance::Performance ()
-  : counters_(),
-    attribute_names_     (),
-    counter_names_       (),
-    group_names_         (),
-    region_names_        (),
-    attribute_monotonic_ (),
-    current_group_       (0),
-    current_region_      (0)
+  : papi_(),
+    counter_names_(),
+    counter_values_(),
+    num_regions_(0),
+    region_names_(),
+    region_counters_(),
+    region_started_(),
+    region_index_(),
+    papi_counters_(0),
+    i0_basic_rel_(0),
+    i0_basic_abs_(0),
+    i0_papi_(0),
+    i0_user_(0),
+    n_basic_rel_(0),
+    n_basic_abs_(0),
+    n_papi_(0),
+    n_user_(0)
 {
-  counters_.push_back(new PerfCounters(num_attributes,num_counters));
+
+  new_counter(counter_type_basic_rel,"time-usec");
+  new_counter(counter_type_basic_abs,"bytes-curr");
+  new_counter(counter_type_basic_abs,"bytes-high");
+  new_counter(counter_type_basic_abs,"bytes-highest");
+
+  papi_.init();
+
 }
 
 //----------------------------------------------------------------------
 
 Performance::~Performance()
 {
-  deallocate_();
+  delete [] papi_counters_;
+  papi_counters_ = 0;
 }
 
 //----------------------------------------------------------------------
 
-void Performance::start () throw ()
+void Performance::begin() throw()
 {
-  timer_.start();
-  papi_.start();
+  int n = num_counters();
+
+  for (int i=0; i<num_regions(); i++) {
+    region_counters_[i].resize(n);
+    region_started_[i] = false;
+  }
+
+  papi_.start_events();
+  papi_counters_ = new long long [papi_.num_events()];
 }
 
 //----------------------------------------------------------------------
 
-void Performance::stop () throw ()
+void Performance::end() throw()
 {
-  timer_.stop();
-  papi_.stop();
+  papi_.stop_events();
+  // stop regions?
 }
 
 //----------------------------------------------------------------------
 
-unsigned Performance::new_attribute(std::string attribute_name,
-				    bool is_monotonic)
-/// @param    id_attribute
-/// @param    attribute_name
-/// @param    type
+int Performance::new_counter
+(
+ counter_type type,
+ std::string  counter_name
+ )
 {
-  attribute_names_.push_back(attribute_name);
-  attribute_monotonic_.push_back(is_monotonic);
 
-  return attribute_names_.size()-1;
+  counter_names_[type].push_back(counter_name);
+  counter_values_.push_back(0);
+
+  // Assumes [basic, papi, user] ordering of counters
+
+  int id;
+
+  if (type == counter_type_basic_rel) {
+
+    id = type_index_to_id (type,n_basic_rel_);
+    ++n_basic_rel_;
+
+    ++i0_user_;    ++i0_papi_;    ++i0_basic_abs_;
+
+  } else if (type == counter_type_basic_abs) {
+
+    id = type_index_to_id (type,n_basic_abs_);
+    ++n_basic_abs_;
+
+    ++i0_user_;    ++i0_papi_;
+
+  } else if (type == counter_type_papi) {
+
+    id = type_index_to_id (type,n_papi_);
+    ++n_papi_;
+
+    ++i0_user_;
+
+    papi_.add_event (counter_name);
+
+  } else if (type == counter_type_user) {
+
+    id = type_index_to_id (type,n_user_);
+    ++n_user_;
+
+  }
+
+  TRACE4("%d %d %d %d",n_basic_abs_,n_basic_rel_,n_papi_,n_user_);
+
+  return id;
 }
 
 //----------------------------------------------------------------------
 
-int Performance::attribute(unsigned id_attribute)
+void Performance::refresh_counters_() throw()
 {
-  INCOMPLETE("Performance::attribute");
-  return 0;
-}
+  papi_.event_values(papi_counters_);
 
-//----------------------------------------------------------------------
+  for (int i=i0_papi_; i<i0_papi_+n_papi_; i++) {
+    counter_values_[i] = papi_counters_[i-i0_papi_];
+  }
 
-void Performance::set_attribute(unsigned id_attribute,
-				int value)
-{
-  INCOMPLETE("Performance::set_attribute");
-}
-
-//----------------------------------------------------------------------
-
-unsigned Performance::new_group(std::string group_name)
-{
-  group_names_.push_back(group_name);
-  return group_names_.size()-1;
-}
-
-//----------------------------------------------------------------------
-
-int Performance::group(unsigned id_group)
-{
-  INCOMPLETE("Performance::group");
-  return 0;
-}
-
-//----------------------------------------------------------------------
-
-void Performance::group_set(unsigned id_group)
-{
-  INCOMPLETE("Performance::group_set");
-}
-
-//----------------------------------------------------------------------
-
-void Performance::begin_group(unsigned group_id)
-{
+  Memory * memory = Memory::instance();
   
-  if ( current_group_ ) {
-    // begin_group() called when another group is already active
-	     
-    WARNING2("Performance::begin_group",
-	     "begin_group(%s) called before end_group(%s)",
-	     group_names_.at(current_group_).c_str(),
-	     group_names_.at(group_id).c_str());
+  counter_values_[i0_basic_rel_]   = time_real_();
 
-    // End the mistakenly active group
-    end_group(current_group_);
-
-  }
-
-  current_group_ = group_id;
+  counter_values_[i0_basic_abs_]   = memory->bytes();
+  counter_values_[i0_basic_abs_+1] = memory->bytes_high();
+  counter_values_[i0_basic_abs_+2] = memory->bytes_highest();
 
 }
 
 //----------------------------------------------------------------------
 
-void Performance::end_group(unsigned id_group)
+void Performance::assign_counter(int id, long long value)
 {
-  if (id_group != current_group_) {
-    // end_group() called with an inactive one
-    WARNING2("Performance::end_group",
-	     "Mismatch between begin_group(%s) and end_group(%s)",
-	     group_names_[current_group_].c_str(),
-	     group_names_[id_group].c_str());
-  }
+  int index = id_to_index(id);
 
-  current_group_ = 0;
+  if ( (i0_user_ <= index) && (index < i0_user_ + n_user_ )) {
+    
+    counter_values_[index] = value;
+
+  } else {
+
+    WARNING3 ("Performance::assign_counter",
+	      "counter index %d out of range [%d,%d]",
+	      index,i0_user_,i0_user_+n_user_-1);
+
+  }
 
 }
 
 //----------------------------------------------------------------------
 
-unsigned Performance::new_region(std::string region_name)
+void Performance::increment_counter(int id, long long value)
 {
+  int index = id_to_index(id);
+
+  if ( (i0_user_ <= index) && (index < i0_user_ + n_user_) ) {
+
+    counter_values_[index] += value;
+
+  } else {
+
+    WARNING3 ("Performance::increment_counter",
+	      "counter index %d out of range [%d,%d]",
+	      index,i0_user_,i0_user_+n_user_-1);
+
+  }
+}
+
+//----------------------------------------------------------------------
+
+int Performance::num_regions() const throw()
+{
+  return region_names_.size();
+}
+
+//----------------------------------------------------------------------
+
+std::string Performance::region_name (int index_region) const throw()
+{
+  return region_names_[index_region];
+}
+
+//----------------------------------------------------------------------
+
+int Performance::region_index (std::string name) const throw()
+{
+  std::map<const std::string,int>::const_iterator it;
+  it=region_index_.find(name);
+  if (it != region_index_.end()) {
+    return it->second;
+  } else {
+    return -1;
+  }
+  //  return region_index_.at(name);
+}
+
+//----------------------------------------------------------------------
+
+int Performance::new_region (std::string region_name) throw()
+{ 
+  int region_index = num_regions();
+
   region_names_.push_back(region_name);
-  return region_names_.size()-1;
+  region_index_[region_name] = region_index;
+
+  std::vector <long long> counters;
+  region_counters_.push_back(counters);
+  region_started_.push_back(false);
+
+  return region_index;
 }
 
 //----------------------------------------------------------------------
 
-int Performance::region(unsigned id_region)
+void  Performance::start_region(int id_region) throw()
 {
-  INCOMPLETE("Performance::region");
-  return 0;
+  // NOTE: similar to stop_region()
+
+  TRACE1("Performance::start_region %s",region_names_[id_region].c_str());
+
+  int index_region = id_region;
+
+  if (! region_started_[index_region]) {
+
+    region_started_[index_region] = true;
+
+  } else {
+    WARNING1 ("Performance::start_region",
+	     "Region %s already started",
+	     region_names_[id_region].c_str());
+    return;
+  }
+
+  refresh_counters_();
+    
+  for (int i=0; i<num_counters(); i++) {
+
+    region_counters_[index_region][i] = counter_values_[i];
+
+  }
 }
 
 //----------------------------------------------------------------------
 
-void Performance::set_region(unsigned id_region)
+void  Performance::stop_region(int id_region) throw()
 {
-  INCOMPLETE("Performance::set_region");
+  // NOTE: similar to start_region()
+
+  TRACE1("Performance::stop_region %s",region_names_[id_region].c_str());
+
+  int index_region = id_region;
+
+  if (region_started_[index_region]) {
+
+    region_started_[index_region] = false;
+
+  } else {
+    WARNING1 ("Performance::stop_region",
+	     "Region %s already stopped",
+	     region_names_[id_region].c_str());
+    return;
+  }
+
+  refresh_counters_();
+
+  for (int i=0; i<num_counters(); i++) {
+
+    if (i0_basic_abs_ <= i && i < i0_basic_abs_ + n_basic_abs_) {
+      region_counters_[index_region][i] = counter_values_[i];
+    } else {
+      region_counters_[index_region][i] = 
+	counter_values_[i] - region_counters_[index_region][i];
+    }
+
+  }
 }
 
 //----------------------------------------------------------------------
 
-void Performance::start_region(unsigned region_id)
+void Performance::region_counters(int index_region, long long * counters) throw()
 {
-  INCOMPLETE("Performance::start_region");
+  if ( ! region_started_[index_region]) {
+    for (int i=0; i<num_counters(); i++) {
+      counters[i] = region_counters_[index_region][i];
+    }
+  } else {
+    refresh_counters_();
+    for (int i=0; i<num_counters(); i++) {
+      if (i0_basic_abs_ <= i && i < i0_basic_abs_ + n_basic_abs_) {
+	counters[i] = counter_values_[i];
+      } else {
+	counters[i] = counter_values_[i] - region_counters_[index_region][i];
+      }
+    }
+  }
 }
 
 //----------------------------------------------------------------------
 
-void Performance::stop_region(unsigned region_id)
+int Performance::index_to_id (int index) const throw()
 {
-  INCOMPLETE("Performance::stop_region");
+  int id;
+
+  if        (i0_user_  <= index && index < i0_user_ +  n_user_) {
+    id = base_user      +  (index - i0_user_);
+  } else if (i0_basic_abs_ <= index && index < i0_basic_abs_ + n_basic_abs_) {
+    id = base_basic_abs + (index - i0_basic_abs_);
+  } else if (i0_basic_rel_ <= index && index < i0_basic_rel_ + n_basic_rel_) {
+    id = base_basic_rel + (index - i0_basic_rel_);
+  } else if (i0_papi_  <= index && index < i0_papi_ +  n_papi_) {
+    id = base_papi      +  (index - i0_papi_);
+  } else {
+    WARNING1 ("Performance::index_to_id",
+	      "counter index %d out of range",
+	      index);
+  }
+
+  return id;
 }
 
 //----------------------------------------------------------------------
 
-unsigned Performance::new_counter(std::string counter_name)
+int Performance::type_index_to_id (counter_type type, int index) const throw()
 {
-  counter_names_.push_back(counter_name);
-  return counter_names_.size()-1;
+  int id = index;
+
+  if      (type == counter_type_user)  id += base_user;
+  else if (type == counter_type_basic_rel) id += base_basic_rel;
+  else if (type == counter_type_basic_abs) id += base_basic_abs;
+  else if (type == counter_type_papi)  id += base_papi;
+  else {
+    WARNING1 ("Performance::type_index_to_id",
+	      "unknown counter_type %d",
+	      type);
+  }
+
+  return id;
 }
 
 //----------------------------------------------------------------------
 
-type_counter Performance::counter(unsigned id_counter)
+int Performance::id_to_index(int id) const throw()
 {
-  INCOMPLETE("Performance::counter");
-  return 0;
+  int index = id;
+  if      (base_user <= id  && id < base_user  + n_user_)
+    index += (i0_user_  - base_user);
+  else if (base_papi <= id  && id < base_papi  + n_papi_)  
+    index += (i0_papi_  - base_papi);
+  else if (base_basic_rel <= id && id < base_basic_rel + n_basic_rel_) 
+    index += (i0_basic_rel_ - base_basic_rel);
+  else if (base_basic_abs <= id && id < base_basic_abs + n_basic_abs_) 
+    index += (i0_basic_abs_ - base_basic_abs);
+  else {
+    WARNING1 ("Performance::id_to_index",
+	      "counter id %d out of range",
+	      id);
+  }
+  return index;
 }
-
-//----------------------------------------------------------------------
-
-void Performance::set_counter(unsigned          id_counter,
-			      type_counter value)
-{
-  INCOMPLETE("Performance::set_counter");
-}
-
-//----------------------------------------------------------------------
-
-void Performance::increment_counter(unsigned          id_counter,
-				    type_counter value)
-{
-  INCOMPLETE("Performance::increment_counter");
-}
-
-//----------------------------------------------------------------------
-
-void Performance::flush()
-{
-  INCOMPLETE("Performance::flush");
-}
-
 
 //======================================================================
-void Performance::deallocate_() throw()
+
+void Performance::id_to_type_index_
+(int id, counter_type * type, int * index) const throw()
 {
-  for (unsigned i=0; i<counters_.size(); i++) {
-    delete counters_.at(i);
+  (*index) = id;
+  if (base_user <= id && id < base_user + n_user_) {
+    (*type) = counter_type_user;
+    (*index) -= base_user;
+  } else if (base_papi <= id && id < base_papi + n_papi_) {
+    (*type) = counter_type_papi;
+    (*index) -= base_papi;
+  } else if (base_basic_rel <= id && id < base_basic_rel + n_basic_rel_) {
+    (*type) = counter_type_basic_rel;
+    (*index) -= base_basic_rel;
+  } else if (base_basic_abs <= id && id < base_basic_abs + n_basic_abs_) {
+    (*type) = counter_type_basic_abs;
+    (*index) -= base_basic_abs;
+  } else {
+    WARNING1 ("Performance::id_to_type_index_",
+	      "counter id %d out of range",
+	      id);
   }
+    
 }
 
-//----------------------------------------------------------------------
-
-// void Performance::print_rusage_(const Monitor * monitor) const throw()
-// {
-//   struct rusage r;
-//   getrusage(RUSAGE_SELF, &r);
-
-//   monitor->print ("Performance","utime = %f",
-//    	  r.ru_utime.tv_sec + 
-// 	  r.ru_utime.tv_usec * 1e-6);
-//   monitor->print ("Performance","stime = %f",
-//    	  r.ru_stime.tv_sec + 
-// 	  r.ru_stime.tv_usec * 1e-6);
-
-//   if (r.ru_maxrss) monitor->print ("Performance"," maximum resident set size: %ld",  
-// 			   1024 * r.ru_maxrss);
-//   if (r.ru_ixrss) monitor->print ("Performance"," integral shared memory size: %ld",  r.ru_ixrss);
-//   if (r.ru_idrss) monitor->print ("Performance"," integral unshared data size: %ld",  r.ru_idrss);
-//   if (r.ru_isrss) monitor->print ("Performance"," integral unshared stack size: %ld",  r.ru_isrss);
-//   if (r.ru_minflt) monitor->print ("Performance"," page reclaims (soft page faults): %ld",  r.ru_minflt);
-//   if (r.ru_majflt) monitor->print ("Performance"," page faults (hard page faults): %ld",  r.ru_majflt);
-//   if (r.ru_nswap) monitor->print ("Performance"," swaps: %ld",  r.ru_nswap);
-//   if (r.ru_inblock) monitor->print ("Performance"," block input operations: %ld",  r.ru_inblock);
-//   if (r.ru_oublock) monitor->print ("Performance"," block output operations: %ld",  r.ru_oublock);
-//   if (r.ru_msgsnd) monitor->print ("Performance"," IPC messages sent: %ld",  r.ru_msgsnd);
-//   if (r.ru_msgrcv) monitor->print ("Performance"," IPC messages received: %ld",  r.ru_msgrcv);
-//   if (r.ru_nsignals) monitor->print ("Performance"," signals received: %ld",  r.ru_nsignals);
-//   if (r.ru_nvcsw) monitor->print ("Performance"," voluntary context switches: %ld",  r.ru_nvcsw);
-//   if (r.ru_nivcsw) monitor->print ("Performance"," involuntary context switches: %ld",  r.ru_nivcsw);
-
-
-//   monitor->print ("Performance","hostid = %ld",gethostid());
-
-// }

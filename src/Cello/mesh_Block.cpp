@@ -300,7 +300,7 @@ void Block::prepare()
   min_reduce[1] = stop_block ? 1.0 : 0.0;
 
   CkCallback callback (CkIndex_Block::p_output(NULL), thisProxy);
-  DEBUG("Block::prepare() calling Block::p_output()");
+  TRACE1("Calling contribute %d",2*sizeof(double));
   contribute( 2*sizeof(double), min_reduce, CkReduction::min_double, callback);
 
 }
@@ -352,11 +352,6 @@ void Block::p_output(CkReductionMsg * msg)
 
 #ifdef CONFIG_USE_CHARM
 
-void Block::p_refresh ()
-{
-  refresh();
-}
-
 //----------------------------------------------------------------------
 void Block::p_compute (int cycle, double time, double dt)
 {
@@ -375,7 +370,7 @@ void Block::p_compute (int cycle, double time, double dt)
 
 void Block::refresh ()
 {
-  DEBUG ("Block::refresh()");
+  TRACE ("Block::refresh()");
 
   bool is_boundary[3][2];
 
@@ -781,8 +776,9 @@ void Block::is_on_boundary (double lower[3], double upper[3],
 void Block::allocate (const FieldDescr * field_descr) throw()
 { 
   for (size_t i=0; i<field_block_.size(); i++) {
-    field_block_[i]->allocate_array(field_descr);
-    field_block_[i]->allocate_ghosts(field_descr);
+    field_block_[i]->allocate_array(field_descr,true);
+    //    field_block_[i]->allocate_array(field_descr);
+    //    field_block_[i]->allocate_ghosts(field_descr);
   }
 }
 

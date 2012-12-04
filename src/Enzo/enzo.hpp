@@ -32,7 +32,6 @@
 #include "_memory.hpp"
 #include "_parameters.hpp"
 #include "_performance.hpp"
-#include "_lcaperf.hpp"
 #include "_simulation.hpp"
 #include "_field.hpp"
 #include "_mesh.hpp"

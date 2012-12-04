@@ -272,7 +272,9 @@ function summary_incomplete_output ( $test_output, $executables)
       $output_files = "$output_files $output";
       ++$num_output_files;
     }
-    system("cat $output_files | awk 'BEGIN{b=0; e=0;}; /UNIT TEST BEGIN/ {b=b+1};/UNIT TEST END/ {e=e+1};END{if (b==e) {print \"<td></td>\"} else {print \"<td class=fail>\"b - e\"</td>\";}}'");
+
+    system("cat $output_files | awk 'BEGIN{e=0;}; /UNIT TEST END/ {e=e+1};END{if ($num_output_files==e) {print \"<td></td>\"} else {print \"<td class=fail>\"$num_output_files - e\"</td>\";}}'");
+
   }
   printf ("<th></th>");
 }
@@ -571,8 +573,8 @@ test_summary("Parallel",array("GroupProcess","Layout"),
 	     array("test_GroupProcess","test_Layout")); 
 test_summary("Parameters",array("Parameters"),
 	     array("test_Parameters")); 
-test_summary("Performance",array("Papi", "Performance","LcaPerf"),
-	     array("test_Papi","test_Performance","test_LcaPerf")); 
+test_summary("Performance",array("Papi", "Performance","Timer"),
+	     array("test_Papi","test_Performance","test_Timer")); 
 
 
 printf ("</tr></table></br>\n");
@@ -860,7 +862,7 @@ test_group("Performance");
 
 tests("Cello","test_Performance","test_Performance","");
 tests("Cello","test_Papi",       "test_Papi","");
-tests("Cello","test_LcaPerf",    "test_LcaPerf","");
+tests("Cello","test_Timer",       "test_Timer","");
 
 /* <hr> */
 /* <h2>Mesh Tests (Prototype Code)</h2> */

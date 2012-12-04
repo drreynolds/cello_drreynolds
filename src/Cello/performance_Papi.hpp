@@ -12,28 +12,12 @@ class Papi {
 
   /// @class    Papi
   /// @ingroup  Groupname
-  /// @brief    [\ref Performance] Class for accessing PAPI counters
+  /// @brief    [\ref Performance] Class for accessing PAPI events
 
 public: // interface
 
   /// Constructor
   Papi() throw();
-
-  //----------------------------------------------------------------------
-  // Big Three
-  //----------------------------------------------------------------------
-
-  /// Destructor
-  // ~Papi() throw()
-  // {};
-
-  // /// Copy constructor
-  // Papi(const Papi & papi) throw()
-  // {};
-
-  // /// Assignment operator
-  // Papi & operator= (const Papi & papi) throw()
-  // {return *this};
 
 #ifdef CONFIG_USE_CHARM
   /// CHARM++ Pack / Unpack function
@@ -43,14 +27,6 @@ public: // interface
     // NOTE: change this function whenever attributes change
     WARNING("PerformancePapi::pup","skipping");
     return;
-    p | is_started_;
-    p | time_real_total_;
-    p | time_proc_total_;
-    p | flop_count_total_;
-    p | flop_rate_;
-    p | time_real_;
-    p | time_proc_;
-    p | flop_count_;
   }
 #endif
 
@@ -58,55 +34,45 @@ public: // interface
   // global control
   //----------------------------------------------------------------------
 
-  /// Start counters
-  void start() throw();
+  /// Initialize PAPI
+  void init() throw();
 
-  /// Stop counters
-  void stop() throw();
+  /// Return the number of PAPI events
+  int num_events() const throw();
 
-  /// Update counters
-  void update() throw()
-  {  stop(); start(); }
+  /// Return the name of the ith event counter
+  std::string event_name (int index_event) const throw();
 
-  /// Real time between start() and stop()
-  float time_real() const throw();
+  /// Add a new counter, returning the id
+  int add_event(std::string event) throw();
 
-  /// Process time between start() and stop()
-  float time_proc() const throw();
+  /// Start event counting
+  void start_events() throw();
 
-  /// Return number of flops between start() and stop()
-  long long flop_count() const throw();
+  /// Stop event counting
+  void stop_events() throw();
 
-  /// Return flop rate between start() and stop()
-  float flop_rate() const throw();
+  /// Return array to events
+  int event_values (long long * values) const throw();
 
-  // void print () const throw();
 
 private: // attributes
+
+  /// Whether PAPI is initialized
+  bool is_initialized_;
 
   /// Whether counting has started
   bool is_started_;
 
-  /// Argument 1 to PAPI_flops(): real time
-  float time_real_total_;
 
-  /// Argument 2 to PAPI_flops(): process time
-  float time_proc_total_;
+  /// PAPI event set
+  int event_set_;
 
-  /// Argument 3 to PAPI_flops(): floating point operations
-  long long flop_count_total_;
+  /// Number of PAPI events successfully added to the event_set_
+  int num_events_;
 
-  /// Argument 4 to PAPI_flops(): floating point rate in flops/s
-  float flop_rate_;
-
-  /// Real time since last start
-  float time_real_;
-
-  /// Process time since last stop
-  float time_proc_;
-
-  /// Argument 3 to PAPI_flops(): floating point operations
-  long long flop_count_;
+  /// vector of event names in event set
+  std::vector<std::string> event_names_;
 
 };
 

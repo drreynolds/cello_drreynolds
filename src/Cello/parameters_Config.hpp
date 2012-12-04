@@ -122,7 +122,7 @@ public: // attributes
   std::vector<int>           field_centering [3];
   double                     field_courant;
   std::vector<std::string>   field_fields;
-  int                        field_ghosts[3];;
+  int                        field_ghosts[3];
   int                        field_padding;
   int                        field_precision;
   bool                       field_refresh_corners;
@@ -160,6 +160,10 @@ public: // attributes
   double                     output_schedule_stop  [MAX_FILE_GROUPS];
   double                     output_schedule_step  [MAX_FILE_GROUPS];
   std::vector<double>        output_schedule_list  [MAX_FILE_GROUPS];
+
+  std::vector<std::string>   performance_papi_counters;
+  std::string                performance_name;
+  int                        performance_stride;
 
   int                        stopping_cycle;
   double                     stopping_time;

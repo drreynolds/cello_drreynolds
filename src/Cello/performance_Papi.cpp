@@ -11,104 +11,107 @@
 
 #include "performance.hpp"
 
+#ifndef CONFIG_USE_PAPI
+#  define PAPI_NULL 0
+#endif
+
 //----------------------------------------------------------------------
 
 Papi::Papi() throw()
-  : is_started_(false),
-    time_real_total_(0),
-    time_proc_total_(0),
-    flop_count_total_(0),
-    flop_rate_(0),
-    time_real_(0),
-    time_proc_(0),
-    flop_count_(0)
-      
+  : is_initialized_(false),
+    is_started_(false),
+    event_set_(PAPI_NULL),
+    num_events_(0),
+    event_names_()
+
 {
 }
 
 //======================================================================
 
-void Papi::start() throw()
+void Papi::init() throw()
 {
 #ifdef CONFIG_USE_PAPI
-  if (is_started_) {
-    WARNING("Papi::start",
-	    "Counters already started");
+  // http://icl.cs.utk.edu/projects/papi/wiki/PAPIC:Low_Level
+
+  int retval;
+
+  retval = PAPI_library_init(PAPI_VER_CURRENT);
+
+  if (retval != PAPI_VER_CURRENT && retval > 0) {
+    WARNING("Papi::init","PAPI library version mismatch!");
+  } else if (retval < 0) {
+    WARNING("Papi::init","PAPI initialization error!");
   } else {
-    is_started_ = true;
-    float mflop_rate;
-    // @@@@ MEMORY LEAK (4 bytes) r2026 @@@@
-    int retval = PAPI_flops(&time_real_total_, 
-			    &time_proc_total_, 
-			    &flop_count_total_,
-			    &mflop_rate);
+    is_initialized_ = true;
+  }
+
+  retval = PAPI_create_eventset(&event_set_);
+
+  if (retval != PAPI_OK) {
+    WARNING1("PAPI::init","PAPI_create_eventset returned %d",retval);
+    is_initialized_ = false;
+  } else {
+    is_initialized_ = true;
+  }
+
+#endif
+}
+
+//----------------------------------------------------------------------
+
+int Papi::num_events() const throw()
+{
+  return num_events_;
+}
+
+//----------------------------------------------------------------------
+
+std::string Papi::event_name (int index_event) const throw()
+{
+  return event_names_[index_event];
+}
+
+//----------------------------------------------------------------------
+
+int Papi::add_event(std::string event) throw()
+{
+#ifdef CONFIG_USE_PAPI
+  if (! is_initialized_) {
+
+    WARNING1("PAPI::add_event",
+	     "Not adding event %s since PAPI is not initialized",
+	     event.c_str());
+    return 0;
+
+  } else {
+
+    int retval;
+    int id;
+    retval = PAPI_event_name_to_code ((char *)event.c_str(),&id);
 
     if (retval != PAPI_OK) {
-      WARNING1("Papi::start()",
-	       "Unexpected return value %d",retval);
+      WARNING2("PAPI::add_event","PAPI_event_name_to_code %s returned %d",
+	       event.c_str(),retval);
+      return 0;
     }
-    flop_rate_ = mflop_rate * 1e6;
-  }
-#endif
-}
 
-//----------------------------------------------------------------------
+    retval = PAPI_add_event(event_set_, id);
 
-void Papi::stop() throw()
-{
-#ifdef CONFIG_USE_PAPI
-
-  if (! is_started_) {
-    WARNING("Papi::stop",
-	    "Counters already stopped");
-  } else {
-    is_started_ = false;
-    float mflop_rate;
-    int retval = PAPI_flops(&time_real_, 
-	       &time_proc_, 
-	       &flop_count_,
-	       &mflop_rate);
     if (retval != PAPI_OK) {
-      WARNING1("Papi::start()",
-	       "Unexpected return value %d",retval);
+      WARNING2("PAPI::add_event","PAPI_add_event for %d returned %d",
+	       id,retval);
+      return 0;
+    } else {
+      
+      event_names_.push_back(event);
+
+      ++ num_events_;
+
+      return num_events_-1;
+
     }
-    flop_rate_ = mflop_rate * 1e6;
-
-    time_real_  = time_real_  - time_real_total_;
-    time_proc_  = time_proc_  - time_proc_total_;
-    flop_count_ = flop_count_ - flop_count_total_;
   }
-#endif
-}
-
-//----------------------------------------------------------------------
-
-float Papi::time_real() const throw()
-{
-#ifdef CONFIG_USE_PAPI
-  return time_real_;
-#else
-  return 0.0;
-#endif
-}
-
-//----------------------------------------------------------------------
-
-float Papi::time_proc() const throw()
-{
-#ifdef CONFIG_USE_PAPI
-  return time_proc_;
-#else
-  return 0.0;
-#endif
-}
-
-//----------------------------------------------------------------------
-
-long long Papi::flop_count() const throw()
-{
-#ifdef CONFIG_USE_PAPI
-  return flop_count_;
 #else
   return 0;
 #endif
@@ -116,24 +119,71 @@ long long Papi::flop_count() const throw()
 
 //----------------------------------------------------------------------
 
-float Papi::flop_rate() const throw()
+
+void Papi::start_events() throw()
 {
 #ifdef CONFIG_USE_PAPI
-  return flop_rate_;
-#else
-  return 0.0;
+  int retval;
+
+  if (! is_started_ && num_events_ > 0 ) {
+
+    retval = PAPI_start(event_set_);
+
+    if (retval != PAPI_OK) {
+      WARNING1("PAPI::start_events()","PAPI_start() returned %d",retval);
+    }
+
+    is_started_ = true;
+
+  } else if (is_started_) {
+    WARNING("Papi::start_events",
+	    "Events already started");
+  } else {
+    WARNING("Papi::start_events",
+	    "No events to start");
+  }
 #endif
 }
 
 //----------------------------------------------------------------------
 
-// void Papi::print () const throw()
-// {
-// #ifdef CONFIG_USE_PAPI
-//   Monitor * monitor = Monitor::instance();
-//   monitor->print ("Performance","PAPI Time real   = %f",time_real());
-//   monitor->print ("Performance","PAPI Time proc   = %f",time_proc());
-//   monitor->print ("Performance","PAPI GFlop count = %f",flop_count()*1e-9);
-//   monitor->print ("Performance","PAPI GFlop rate  = %f",flop_count()*1e-9 / time_real());
-// #endif
-// };
+void Papi::stop_events() throw()
+{
+#ifdef CONFIG_USE_PAPI
+
+  if ( is_started_ && num_events_ > 0) {
+
+    long long * values = new long long [num_events_];
+    int retval = PAPI_stop(event_set_,values);
+    delete [] values; // values not used
+
+    if (retval == PAPI_OK) {
+      is_started_ = false;
+    } else {
+      WARNING1("PAPI::stop_events()","PAPI_stop() returned %d",retval);
+    }
+
+  } else if ( ! is_started_ ) {
+    WARNING("Papi::stop_events",
+	    "Events already stopped");
+  } else {
+    WARNING("Papi::stop_events",
+	    "No events to stop");
+  }
+
+#endif
+}
+
+//----------------------------------------------------------------------
+
+int Papi::event_values (long long * values) const throw()
+{
+#ifdef CONFIG_USE_PAPI
+  PAPI_read(event_set_,values);
+  return num_events_;
+#else
+  return 0;
+#endif
+}
+
+

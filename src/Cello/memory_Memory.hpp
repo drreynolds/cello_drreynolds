@@ -37,7 +37,10 @@ public: // interface
 
 private: // interface
   /// Create the (single) Memory object (singleton design pattern)
-  Memory() throw () : is_active_(false)
+  Memory() throw ()
+#ifdef CONFIG_USE_MEMORY
+ : is_active_(false)
+#endif
   { initialize_(); };
 
   /// Copy the (single) Memory object (singleton design pattern)
@@ -76,8 +79,11 @@ public: // interface
   /// Estimate of used / available memory
   float efficiency ( memory_group_handle group_handle = 0 ) throw ();
 
-  /// Maximum number of bytes allocated
+  /// Maximum number of bytes allocated within an interval
   long long bytes_high ( memory_group_handle group_handle = 0 ) throw ();
+
+  /// Maximum number of bytes allocated during run
+  long long bytes_highest ( memory_group_handle group_handle = 0 ) throw ();
 
   /// Specify the maximum number of bytes to use
   void set_limit ( long long           size, 
@@ -114,7 +120,13 @@ public: // interface
 #endif
 
   bool is_active () const throw()
-  { return is_active_; }
+  { 
+#ifdef CONFIG_USE_MEMORY
+    return is_active_; 
+#else
+    return 0;
+#endif
+  }
 
   /// Set whether to fill memory with a value after allocating
   void set_allocate_fill (bool do_fill, char fill_value = 0)
@@ -184,8 +196,11 @@ private: // attributes
   /// Current bytes allocated for different groups
   long long bytes_       [MEMORY_MAX_NUM_GROUPS + 1];
 
-  /// High-water bytes allocated for different groups
+  /// Intervaled high-water bytes allocated for different groups
   long long bytes_high_  [MEMORY_MAX_NUM_GROUPS + 1];
+
+  /// High-water bytes allocated for different groups
+  long long bytes_highest_  [MEMORY_MAX_NUM_GROUPS + 1];
 
   /// Number of calls to new for different groups
   long long new_calls_   [MEMORY_MAX_NUM_GROUPS + 1];

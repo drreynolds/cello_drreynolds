@@ -47,13 +47,6 @@ void SimulationCharm::initialize() throw()
 
 //----------------------------------------------------------------------
 
-void SimulationCharm::run() throw()
-{
-  initial();
-}
-
-//----------------------------------------------------------------------
-
 void SimulationCharm::s_initialize()
 {
   if (patch_loop_.done()) run();
@@ -61,8 +54,22 @@ void SimulationCharm::s_initialize()
 
 //----------------------------------------------------------------------
 
-void SimulationCharm::c_refresh()
+void SimulationCharm::run() throw()
 {
+  initial();
+}
+
+//----------------------------------------------------------------------
+
+void SimulationCharm::p_refresh()
+{
+  TRACE("SimulationCharm::p_refresh");
+  refresh();
+};
+
+void SimulationCharm::refresh()
+{
+  TRACE("SimulationCharm::refresh");
   ItPatch it_patch(hierarchy_);
   Patch * patch;
 
@@ -78,11 +85,16 @@ void SimulationCharm::c_compute()
 {
   if (stop_) {
     
-    performance_output(performance_simulation_);
+    performance_.stop_region (id_cycle_);
+    performance_write();
 
     proxy_main.p_exit(CkNumPes());
 
   } else {
+
+    if (cycle_ > 0 ) performance_.stop_region (id_cycle_);
+
+    performance_.start_region (id_cycle_);
 
     ItPatch it_patch(hierarchy_);
     Patch * patch;
@@ -91,63 +103,7 @@ void SimulationCharm::c_compute()
       proxy_patch->p_compute(cycle_, time_, dt_);
     }
   }
-}
 
-//----------------------------------------------------------------------
-
-void SimulationCharm::p_performance_min(CkReductionMsg * msg)
-{
-  // Collect minimum values
-
-  double * reduce = (double * )msg->getData();
-  for (size_t i=0; i<num_perf_; i++) {
-    perf_min_[i] = reduce[i];
-  }
-  delete msg;
-
-  // Then reduce maximum values
-
-  CkCallback callback (CkIndex_SimulationCharm::p_performance_max(NULL),thisProxy);
-  contribute( num_perf_*sizeof(double), perf_val_, 
-	      CkReduction::max_double, callback);
-
-}
-
-//----------------------------------------------------------------------
-
-void SimulationCharm::p_performance_max(CkReductionMsg * msg)
-{
-  // Collect maximum values
-
-  double * reduce = (double * )msg->getData();
-  for (size_t i=0; i<num_perf_; i++) {
-    perf_max_[i] = reduce[i];
-  }
-  delete msg;
-
-  // Finally reduce sum values
-
-  CkCallback callback (CkIndex_SimulationCharm::p_performance_sum(NULL),thisProxy);
-  contribute( num_perf_*sizeof(double), perf_val_, 
-	      CkReduction::sum_double, callback);
-
-
-}
-
-//----------------------------------------------------------------------
-
-void SimulationCharm::p_performance_sum(CkReductionMsg * msg)
-{
-  // Collect summed values
-
-  double * reduce = (double * )msg->getData();
-  for (size_t i=0; i<num_perf_; i++) {
-    perf_sum_[i] = reduce[i];
-  }
-  delete msg;
-
-  // Display performance output
-  output_performance_();
 }
 
 //======================================================================

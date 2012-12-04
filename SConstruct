@@ -28,7 +28,7 @@ memory = 1
 
 # Enable charm++ dynamic load balancing
 
-balance = 1
+balance = 0
 
 balancer = 'RotateLB'  # For testing only
 
@@ -83,7 +83,7 @@ if not env.GetOption('clean'):
 
      env = configure.Finish()
 
-use_papi = 0
+use_papi = 1
 
 #-----------------------------------------------------------------------
 # COMMAND-LINE ARGUMENTS
@@ -227,6 +227,9 @@ elif (arch == "triton-intel"): from triton_intel import *
 elif (arch == "triton-mpe"):   from triton_mpe   import *
 elif (arch == "triton-pgi"):   from triton_pgi   import *
 elif (arch == "triton-tau"):   from triton_tau   import *
+elif (arch == "gordon-gnu"):   from gordon_gnu   import *
+elif (arch == "gordon-pgi"):   from gordon_pgi   import *
+elif (arch == "gordon-intel"): from gordon_intel   import *
 
 #======================================================================
 # END ARCHITECTURE SETTINGS
@@ -342,6 +345,28 @@ linkflags    = flags_arch
 linkflags    = linkflags + ' ' + flags_link
 linkflags    = linkflags + ' ' + flags_config
 if (type=="charm"):linkflags    = linkflags + ' ' + flags_link_charm
+
+if not os.path.exists("include"):
+     os.makedirs("include")
+cello_def = open ("include/auto_config.def", "w")
+
+cello_def.write ("#define CELLO_ARCH \""+arch+"\"\n")
+cello_def.write ("#define CELLO_TYPE \""+type+"\"\n")
+cello_def.write ("#define CELLO_PREC \""+prec+"\"\n")
+cello_def.write ("#define CELLO_CC           \""+cc[type]+"\"\n")	
+cello_def.write ("#define CELLO_CFLAGS       \""+cflags+"\"\n")
+cello_def.write ("#define CELLO_CPPDEFINES   \""+" ".join(map(str,defines))+"\"\n")
+cello_def.write ("#define CELLO_CPPPATH      \""+" ".join(map(str,cpppath))+"\"\n")
+cello_def.write ("#define CELLO_CXX          \""+cxx[type]+"\"\n")	
+cello_def.write ("#define CELLO_CXXFLAGS     \""+cxxflags+"\"\n")
+cello_def.write ("#define CELLO_FORTRANFLAGS \""+fortranflags+"\"\n")
+cello_def.write ("#define CELLO_FORTRAN      \""+f90[type]+"\"\n")
+cello_def.write ("#define CELLO_FORTRANLIBS  \""+" ".join(map(str,libs_fortran))+"\"\n")
+cello_def.write ("#define CELLO_FORTRANPATH  \""+" ".join(map(str,fortranpath))+"\"\n")
+cello_def.write ("#define CELLO_LIBPATH      \""+" ".join(map(str,libpath))+"\"\n")
+cello_def.write ("#define CELLO_LINKFLAGS    \""+linkflags+"\"\n" )
+
+cello_def.close()
 
 env = Environment (
      CC           = cc[type],	

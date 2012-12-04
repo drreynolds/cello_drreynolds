@@ -10,7 +10,7 @@ flags_link  = '-rdynamic'
 
 cc['mpi']     = 'mpicc'
 cc['serial']  = 'gcc'
-cxx['mpi']    = 'mpic++'
+cxx['mpi']    = 'mpiCC'
 cxx['serial'] = 'g++'
 f90['charm']  = 'gfortran'
 f90['mpi']    = 'gfortran'
@@ -19,7 +19,7 @@ f90['serial'] = 'gfortran'
 libpath_fortran = ''
 libs_fortran    = ['gfortran']
 
-charm_path = '/home/jobordner/public/charm/charm'
+charm_path = '/home/ux452912/charm/620/gnu/net/charm'
 
-papi_path  = ''
-hdf5_path  = '/opt/hdf5/gnu'
+papi_path  = '/home/ux452912'
+hdf5_path  = '/home/ux452912'

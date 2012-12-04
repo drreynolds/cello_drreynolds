@@ -97,16 +97,8 @@ public: // interface
   { return field_descr_; }
 
   /// Return the performance object associated with each cycle
-  Performance * performance_cycle() const throw()
-  { return performance_cycle_; }
-
-  /// Return a pointer to the lcaperf object
-  LcaPerf * lcaperf()
-  { return lcaperf_; }
-
-  /// Return the performance object associated with the entire simulation
-  Performance * performance_simulation() const throw()
-  { return performance_simulation_; }
+  const Performance * performance() const throw()
+  { return &performance_; }
 
   /// Return the group process object
   const GroupProcess * group_process() const throw()
@@ -135,8 +127,11 @@ public: // interface
   /// Output Simulation information
   void monitor_output();
 
-  /// Output Performance information
-  void performance_output(Performance * performance);
+  /// Output Performance information to stdout (root process data only)
+  void performance_output();
+
+  /// Write performance information to disk (all process data)
+  void performance_write();
 
 public: // virtual functions
 
@@ -159,13 +154,16 @@ public: // virtual functions
 protected: // functions
 
   /// Initialize the Config object
-  virtual void initialize_config_ () throw();
+  void initialize_config_ () throw();
 
   /// Initialize the Problem object
   void initialize_problem_ () throw();
 
   /// Initialize global simulation parameters
   void initialize_simulation_ () throw();
+
+  /// Initialize performance objects
+  void initialize_performance_ () throw();
 
   /// Initialize output Monitor object
   void initialize_monitor_ () throw();
@@ -177,10 +175,6 @@ protected: // functions
   void initialize_data_descr_ () throw();
 
   void deallocate_() throw();
-
-  /// Perform actual output of performance data
-  /// Function separate from performance_output() for CHARM++
-  void output_performance_();
 
 protected: // attributes
 
@@ -216,8 +210,8 @@ protected: // attributes
   /// Current cycle
   int cycle_;
 
-  /// Current level (currently only used in lcaperf)
-  int level_;
+  // /// Current level (currently only used in lcaperf)
+  // int level_;
 
   /// Current time
   double time_;
@@ -242,25 +236,17 @@ protected: // attributes
   Timer timer_;
 
   /// Simulation Performance object
-  Performance * performance_simulation_;
+  Performance performance_;
 
-  /// Cycle Performance object
-  Performance * performance_cycle_;
+  /// Performance counter ids
+  int id_simulation_;
+  int id_cycle_;
 
-  /// Current Performance object
-  /// Used primarily for CHARM++ 
-  Performance * performance_curr_;
+  /// Performance file name format (requires %d for process rank)
+  std::string performance_name_;
 
-  /// Lcaperf
-  LcaPerf * lcaperf_;
-
-  /// Arrays for storing local performance data to be reduced
-  /// Used for multiple CHARM++ reductions
-  size_t num_perf_;
-  double * perf_val_;
-  double * perf_min_;
-  double * perf_max_;
-  double * perf_sum_;
+  /// Processor stride for writing strict processor subset of performance data
+  int performance_stride_;
 
   /// Monitor object
   Monitor * monitor_;

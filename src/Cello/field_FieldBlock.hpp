@@ -100,22 +100,34 @@ public: // interface
 	       int id_field_last  = -1) throw();
  
   /// Return whether array is allocated or not
-  bool array_allocated() const throw();
+  bool array_allocated() const throw()
+  { return array_.size() > 0; }
+
+  /// Return whether array is allocated or not
+  size_t array_size() const throw()
+  { return array_.size(); }
 
   /// Allocate storage for the field block
-  void allocate_array(const FieldDescr * field_descr) throw();
+  void allocate_array(const FieldDescr * field_descr,
+		      bool ghosts_allocated = false) throw();
+
+  /// Reallocate storage for the field block, e.g. when changing
+  /// from ghosts to non-ghosts [ costly for large blocks ]
+  void reallocate_array(const FieldDescr * field_descr,
+			bool ghosts_allocated = false) throw();
 
   /// Deallocate storage for the field block
   void deallocate_array() throw();
 
-  /// Return whether ghost cells are allocated or not
-  bool ghosts_allocated() const throw ();
+  /// Return whether ghost cells are allocated or not.  
+  bool ghosts_allocated() const throw ()
+  {  return ghosts_allocated_; }
 
-  /// Allocate and clear ghost values if not already allocated
-  void allocate_ghosts(const FieldDescr * field_descr) throw ();
+  // /// Allocate and clear ghost values if not already allocated
+  // void allocate_ghosts(const FieldDescr * field_descr) throw ();
 
-  /// Deallocate ghost values if allocated
-  void deallocate_ghosts(const FieldDescr * field_descr) throw ();
+  // /// Deallocate ghost values if allocated
+  // void deallocate_ghosts(const FieldDescr * field_descr) throw ();
 
 
 #ifndef CONFIG_USE_CHARM /* MPI only */
@@ -162,11 +174,6 @@ private: // functions
   /// aligned
   int align_padding_ (int alignment) const throw();
 
-  /// Move (not copy) array_ to array and offsets_ to
-  /// offsets
-  void backup_array_  ( const FieldDescr * field_descr,
-			std::vector<int> & offsets );
-
   /// Move (not copy) array to array_ and offsets to
   /// offsets_
   void restore_array_ ( const FieldDescr * field_descr,
@@ -187,8 +194,7 @@ private: // attributes
   /// Offsets into values_ of the first element of each field
   std::vector<int> offsets_;
 
-  /// Whether ghost values are allocated or not (make [3] for
-  /// directionally split?)
+  /// Whether ghost values are allocated or not 
   bool ghosts_allocated_;
 
 };   
