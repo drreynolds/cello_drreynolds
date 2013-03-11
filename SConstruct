@@ -7,7 +7,7 @@ import sys
 
 # Whether to print out messages with the TRACE() series of statements
 
-trace = 1
+trace = 0
 
 # Whether to enable displaying messages with the DEBUG() series of statements
 # Also writes messages to out.debug.<P> where P is the (physical) process rank
@@ -246,7 +246,7 @@ if (not is_arch_valid):
 charmc = charm_path + '/bin/charmc -language charm++ '
 
 cxx['charm']  = charmc + charm_perf + ' '
-cc ['charm']  = charmc + charm_perf + ' '
+# cc ['charm']  = charmc + charm_perf + ' '
 
 if (balance == 1):
      flags_cxx_charm = flags_cxx_charm + ' -balancer ' + balancer

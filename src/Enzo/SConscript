@@ -20,7 +20,7 @@ if (type == "charm"):
 	components.append(['charm'])
 
 components.append(['enzo','simulation', 'problem',
-	      'mesh', 'field',
+	      'comm', 'mesh', 'field',
 	      'io', 'disk','memory','parallel',
 	      'parameters', 
 	      'error', 'monitor', 'performance',
@@ -30,7 +30,7 @@ if (use_papi):
 	components.append(['papi','pfm'])
 
 
-components.append(['hdf5'])
+components.append(['hdf5','z'])
 
 libraries  = ['png','$FORTRANLIBS']
 
